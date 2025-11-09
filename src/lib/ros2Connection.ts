@@ -54,6 +54,15 @@ export interface SemiModeResponse {
   ack: number; // 0: 执行失败, 1: 确认收到
 }
 
+export interface StopRequest {
+  stop_cmd: number; // 0: 不发送紧急情况, 1: 发送紧急情况, 2: 需要更换料筒
+}
+
+export interface StopResponse {
+  stop_ack: number; // 0/1
+  current_state: number; // 0: 施工运行状态中, 1: 已进入停止施工模式
+}
+
 export class ROS2Connection {
   private ros: ROSLIB.Ros | null = null;
   private connectionTopic: ROSLIB.Topic | null = null;
@@ -217,6 +226,26 @@ export class ROS2Connection {
       
       service.callService(rosRequest, (result: any) => {
         resolve(result as SemiModeResponse);
+      }, (error: string) => {
+        reject(new Error(error));
+      });
+    });
+  }
+
+  async callStop(request: StopRequest): Promise<StopResponse> {
+    if (!this.ros) throw new Error('Not connected to ROS2');
+
+    const service = new ROSLIB.Service({
+      ros: this.ros,
+      name: '/stop',
+      serviceType: 'Stop'
+    });
+
+    return new Promise((resolve, reject) => {
+      const rosRequest = new ROSLIB.ServiceRequest(request);
+      
+      service.callService(rosRequest, (result: any) => {
+        resolve(result as StopResponse);
       }, (error: string) => {
         reject(new Error(error));
       });

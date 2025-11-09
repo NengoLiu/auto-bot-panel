@@ -18,6 +18,15 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
   const [width, setWidth] = useState<number>(1000);
   const [length, setLength] = useState<number>(5000);
   const [thickness, setThickness] = useState<number>(5);
+  const [isConfigured, setIsConfigured] = useState<boolean>(false);
+  const [isStopped, setIsStopped] = useState<boolean>(false);
+  const [lastConfig, setLastConfig] = useState<{
+    blade_roller: number;
+    direction: number;
+    width: number;
+    length: number;
+    thickness: number;
+  } | null>(null);
 
   const adjustValue = (
     value: number,
@@ -36,22 +45,78 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
       return;
     }
 
+    const config = {
+      blade_roller: parseInt(bladeRoller),
+      direction: parseInt(direction),
+      width,
+      length,
+      thickness,
+    };
+
     try {
-      const response = await ros2Connection.callSemiMode({
-        blade_roller: parseInt(bladeRoller),
-        direction: parseInt(direction),
-        width,
-        length,
-        thickness,
-      });
+      const response = await ros2Connection.callSemiMode(config);
 
       if (response.ack === 1) {
         toast.success("模式设置成功");
+        setIsConfigured(true);
+        setIsStopped(false);
+        setLastConfig(config);
       } else {
         toast.error("模式设置失败");
       }
     } catch (error) {
       toast.error("设置失败: " + (error as Error).message);
+    }
+  };
+
+  const handleStop = async (stopCmd: number) => {
+    if (!isConnected) {
+      toast.error("请先建立ROS2连接");
+      return;
+    }
+
+    try {
+      const response = await ros2Connection.callStop({
+        stop_cmd: stopCmd,
+      });
+
+      if (response.stop_ack === 1) {
+        if (response.current_state === 1) {
+          toast.success("已进入停止施工模式");
+          setIsStopped(true);
+        } else if (response.current_state === 0) {
+          toast.info("施工运行状态中");
+        }
+      } else {
+        toast.error("停止指令失败");
+      }
+    } catch (error) {
+      toast.error("停止失败: " + (error as Error).message);
+    }
+  };
+
+  const handleContinue = async () => {
+    if (!isConnected) {
+      toast.error("请先建立ROS2连接");
+      return;
+    }
+
+    if (!lastConfig) {
+      toast.error("没有保存的配置");
+      return;
+    }
+
+    try {
+      const response = await ros2Connection.callSemiMode(lastConfig);
+
+      if (response.ack === 1) {
+        toast.success("继续施工成功");
+        setIsStopped(false);
+      } else {
+        toast.error("继续施工失败");
+      }
+    } catch (error) {
+      toast.error("继续施工失败: " + (error as Error).message);
     }
   };
 
@@ -64,13 +129,13 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
         {/* 模式选择 */}
         <div className="space-y-3">
           <Label>施工模式</Label>
-          <RadioGroup value={bladeRoller} onValueChange={(v) => setBladeRoller(v as "0" | "1")}>
+          <RadioGroup value={bladeRoller} onValueChange={(v) => setBladeRoller(v as "0" | "1")} disabled={isConfigured}>
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="0" id="blade" />
+              <RadioGroupItem value="0" id="blade" disabled={isConfigured} />
               <Label htmlFor="blade" className="cursor-pointer">刮涂</Label>
             </div>
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="1" id="roller" />
+              <RadioGroupItem value="1" id="roller" disabled={isConfigured} />
               <Label htmlFor="roller" className="cursor-pointer">辊涂</Label>
             </div>
           </RadioGroup>
@@ -79,13 +144,13 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
         {/* 方向选择 */}
         <div className="space-y-3">
           <Label>施工方向</Label>
-          <RadioGroup value={direction} onValueChange={(v) => setDirection(v as "0" | "1")}>
+          <RadioGroup value={direction} onValueChange={(v) => setDirection(v as "0" | "1")} disabled={isConfigured}>
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="0" id="left" />
+              <RadioGroupItem value="0" id="left" disabled={isConfigured} />
               <Label htmlFor="left" className="cursor-pointer">向左</Label>
             </div>
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="1" id="right" />
+              <RadioGroupItem value="1" id="right" disabled={isConfigured} />
               <Label htmlFor="right" className="cursor-pointer">向右</Label>
             </div>
           </RadioGroup>
@@ -99,7 +164,7 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
               variant="outline"
               size="icon"
               onClick={() => adjustValue(width, -10, 0, 2600, setWidth)}
-              disabled={!isConnected}
+              disabled={!isConnected || isConfigured}
             >
               <Minus className="h-4 w-4" />
             </Button>
@@ -111,7 +176,7 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
                 setWidth(Math.min(Math.max(val, 0), 2600));
               }}
               className="text-center"
-              disabled={!isConnected}
+              disabled={!isConnected || isConfigured}
               min={0}
               max={2600}
             />
@@ -119,7 +184,7 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
               variant="outline"
               size="icon"
               onClick={() => adjustValue(width, 10, 0, 2600, setWidth)}
-              disabled={!isConnected}
+              disabled={!isConnected || isConfigured}
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -135,7 +200,7 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
               variant="outline"
               size="icon"
               onClick={() => adjustValue(length, -100, 0, 20000, setLength)}
-              disabled={!isConnected}
+              disabled={!isConnected || isConfigured}
             >
               <Minus className="h-4 w-4" />
             </Button>
@@ -147,7 +212,7 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
                 setLength(Math.min(Math.max(val, 0), 20000));
               }}
               className="text-center"
-              disabled={!isConnected}
+              disabled={!isConnected || isConfigured}
               min={0}
               max={20000}
             />
@@ -155,7 +220,7 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
               variant="outline"
               size="icon"
               onClick={() => adjustValue(length, 100, 0, 20000, setLength)}
-              disabled={!isConnected}
+              disabled={!isConnected || isConfigured}
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -171,7 +236,7 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
               variant="outline"
               size="icon"
               onClick={() => adjustValue(thickness, -0.5, 0, 20, setThickness)}
-              disabled={!isConnected}
+              disabled={!isConnected || isConfigured}
             >
               <Minus className="h-4 w-4" />
             </Button>
@@ -183,7 +248,7 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
                 setThickness(Math.min(Math.max(val, 0), 20));
               }}
               className="text-center"
-              disabled={!isConnected}
+              disabled={!isConnected || isConfigured}
               min={0}
               max={20}
               step={0.1}
@@ -192,7 +257,7 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
               variant="outline"
               size="icon"
               onClick={() => adjustValue(thickness, 0.5, 0, 20, setThickness)}
-              disabled={!isConnected}
+              disabled={!isConnected || isConfigured}
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -201,13 +266,48 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
         </div>
 
         {/* 提交按钮 */}
-        <Button
-          onClick={handleSubmit}
-          disabled={!isConnected}
-          className="w-full"
-        >
-          设置施工模式
-        </Button>
+        {!isConfigured && (
+          <Button
+            onClick={handleSubmit}
+            disabled={!isConnected}
+            className="w-full"
+          >
+            设置施工模式
+          </Button>
+        )}
+
+        {/* 停止和更换按钮 */}
+        {isConfigured && !isStopped && (
+          <div className="flex gap-3">
+            <Button
+              onClick={() => handleStop(1)}
+              disabled={!isConnected}
+              className="flex-1"
+              variant="destructive"
+            >
+              停止
+            </Button>
+            <Button
+              onClick={() => handleStop(2)}
+              disabled={!isConnected}
+              className="flex-1"
+              variant="outline"
+            >
+              更换配件、涂料
+            </Button>
+          </div>
+        )}
+
+        {/* 继续施工按钮 */}
+        {isStopped && (
+          <Button
+            onClick={handleContinue}
+            disabled={!isConnected}
+            className="w-full"
+          >
+            继续施工
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
