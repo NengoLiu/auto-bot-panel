@@ -6,7 +6,6 @@ export interface ConnectionEstablishRequest {
 
 export interface ConnectionEstablishResponse {
   establish_ack: number; // 0/1
-  current_state: number; // 0: 关机, 1: 开机, 2: 机器故障
 }
 
 export interface EnableRequest {
@@ -15,12 +14,10 @@ export interface EnableRequest {
 
 export interface ChassisEnableResponse {
   motor_ack: number; // 0/1
-  current_state: number; // 0: 未使能, 1: 使能成功, 2: 电机故障
 }
 
 export interface ArmEnableResponse {
   arm_ack: number; // 0/1
-  current_state: number; // 0: 未使能, 1: 使能成功, 2: 机械臂故障
 }
 
 export interface PumpMessage {
@@ -60,7 +57,6 @@ export interface StopRequest {
 
 export interface StopResponse {
   stop_ack: number; // 0/1
-  current_state: number; // 0: 施工运行状态中, 1: 已进入停止施工模式
 }
 
 export interface MachineModeRequest {

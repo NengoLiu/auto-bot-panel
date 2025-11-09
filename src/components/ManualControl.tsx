@@ -38,20 +38,16 @@ export const ManualControl = ({ isConnected }: ManualControlProps) => {
         motor_cmd: chassisEnabled ? 0 : 1,
       });
 
-      const stateMessages = ['未使能', '使能成功', '电机故障'];
-      const message = stateMessages[response.current_state] || '未知状态';
-
       if (response.motor_ack === 1) {
-        setChassisEnabled(response.current_state === 1);
+        setChassisEnabled(!chassisEnabled);
         toast({
           title: "底盘操作成功",
-          description: message,
-          variant: response.current_state === 2 ? "destructive" : "default",
+          description: chassisEnabled ? "底盘已关闭" : "底盘已使能",
         });
       } else {
         toast({
           title: "底盘操作失败",
-          description: message,
+          description: "操作未确认",
           variant: "destructive",
         });
       }
@@ -82,20 +78,16 @@ export const ManualControl = ({ isConnected }: ManualControlProps) => {
         motor_cmd: armEnabled ? 0 : 1,
       });
 
-      const stateMessages = ['未使能', '使能成功', '机械臂故障'];
-      const message = stateMessages[response.current_state] || '未知状态';
-
       if (response.arm_ack === 1) {
-        setArmEnabled(response.current_state === 1);
+        setArmEnabled(!armEnabled);
         toast({
           title: "机械臂操作成功",
-          description: message,
-          variant: response.current_state === 2 ? "destructive" : "default",
+          description: armEnabled ? "机械臂已关闭" : "机械臂已使能",
         });
       } else {
         toast({
           title: "机械臂操作失败",
-          description: message,
+          description: "操作未确认",
           variant: "destructive",
         });
       }

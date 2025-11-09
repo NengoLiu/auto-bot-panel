@@ -81,12 +81,8 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
       });
 
       if (response.stop_ack === 1) {
-        if (response.current_state === 1) {
-          toast.success("已进入停止施工模式");
-          setIsStopped(true);
-        } else if (response.current_state === 0) {
-          toast.info("施工运行状态中");
-        }
+        toast.success("停止指令已发送");
+        setIsStopped(true);
       } else {
         toast.error("停止指令失败");
       }

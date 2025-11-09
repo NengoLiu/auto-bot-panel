@@ -41,13 +41,9 @@ export const useROS2 = () => {
     try {
       const response = await ros2Connection.callConnectionEstablish({ establish });
       
-      const stateMessages = ['关机', '开机', '机器故障'];
-      const message = stateMessages[response.current_state] || '未知状态';
-      
       toast({
         title: response.establish_ack ? "操作成功" : "操作失败",
-        description: message,
-        variant: response.current_state === 2 ? "destructive" : "default",
+        description: establish === 1 ? "开机指令已发送" : "关机指令已发送",
       });
 
       return response;
