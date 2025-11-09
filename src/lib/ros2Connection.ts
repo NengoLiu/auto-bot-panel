@@ -42,6 +42,18 @@ export interface ArmControlMessage {
   arm_reset: number; // uint8 0/1
 }
 
+export interface SemiModeRequest {
+  blade_roller: number; // 0: 刮涂, 1: 辊涂
+  direction: number; // 0: 向左, 1: 向右
+  width: number; // float32 0-2600mm
+  length: number; // float32 0-20000mm
+  thickness: number; // float32 0-20mm
+}
+
+export interface SemiModeResponse {
+  ack: number; // 0: 执行失败, 1: 确认收到
+}
+
 export class ROS2Connection {
   private ros: ROSLIB.Ros | null = null;
   private connectionTopic: ROSLIB.Topic | null = null;
@@ -189,6 +201,26 @@ export class ROS2Connection {
 
     const rosMessage = new ROSLIB.Message(message);
     this.armTopic.publish(rosMessage);
+  }
+
+  async callSemiMode(request: SemiModeRequest): Promise<SemiModeResponse> {
+    if (!this.ros) throw new Error('Not connected to ROS2');
+
+    const service = new ROSLIB.Service({
+      ros: this.ros,
+      name: '/semi_mode',
+      serviceType: 'Semi'
+    });
+
+    return new Promise((resolve, reject) => {
+      const rosRequest = new ROSLIB.ServiceRequest(request);
+      
+      service.callService(rosRequest, (result: any) => {
+        resolve(result as SemiModeResponse);
+      }, (error: string) => {
+        reject(new Error(error));
+      });
+    });
   }
 }
 

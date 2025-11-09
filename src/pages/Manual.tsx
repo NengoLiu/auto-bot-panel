@@ -1,5 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ManualControl } from "@/components/ManualControl";
+import { SemiAutoControl } from "@/components/SemiAutoControl";
 
 interface ManualProps {
   isConnected: boolean;
@@ -21,9 +22,7 @@ const Manual = ({ isConnected }: ManualProps) => {
         </TabsContent>
         
         <TabsContent value="semi-auto" className="mt-6">
-          <div className="text-center text-muted-foreground py-12">
-            半自动模式开发中...
-          </div>
+          <SemiAutoControl isConnected={isConnected} />
         </TabsContent>
       </Tabs>
     </div>
