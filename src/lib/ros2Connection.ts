@@ -63,6 +63,14 @@ export interface StopResponse {
   current_state: number; // 0: 施工运行状态中, 1: 已进入停止施工模式
 }
 
+export interface MachineModeRequest {
+  mode_cmd: number; // 0: 准备状态/紧急暂停, 1: 手动模式, 2: 半自动
+}
+
+export interface MachineModeResponse {
+  mode_ack: number; // 0/1
+}
+
 export class ROS2Connection {
   private ros: ROSLIB.Ros | null = null;
   private connectionTopic: ROSLIB.Topic | null = null;
@@ -246,6 +254,26 @@ export class ROS2Connection {
       
       service.callService(rosRequest, (result: any) => {
         resolve(result as StopResponse);
+      }, (error: string) => {
+        reject(new Error(error));
+      });
+    });
+  }
+
+  async callMachineMode(request: MachineModeRequest): Promise<MachineModeResponse> {
+    if (!this.ros) throw new Error('Not connected to ROS2');
+
+    const service = new ROSLIB.Service({
+      ros: this.ros,
+      name: '/machine_mode',
+      serviceType: 'Mode'
+    });
+
+    return new Promise((resolve, reject) => {
+      const rosRequest = new ROSLIB.ServiceRequest(request);
+      
+      service.callService(rosRequest, (result: any) => {
+        resolve(result as MachineModeResponse);
       }, (error: string) => {
         reject(new Error(error));
       });
