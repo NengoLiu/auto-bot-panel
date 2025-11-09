@@ -135,7 +135,7 @@ export class ROS2Connection {
     const service = new ROSLIB.Service({
       ros: this.ros,
       name: '/connection_establish',
-      serviceType: 'Establish'
+      serviceType: 'web_connect/srv/Establish'
     });
 
     return new Promise((resolve, reject) => {
@@ -155,7 +155,7 @@ export class ROS2Connection {
     const service = new ROSLIB.Service({
       ros: this.ros,
       name: '/chassis_enable',
-      serviceType: 'Enable'
+      serviceType: 'web_connect/srv/Enable'
     });
 
     return new Promise((resolve, reject) => {
@@ -175,7 +175,7 @@ export class ROS2Connection {
     const service = new ROSLIB.Service({
       ros: this.ros,
       name: '/arm_enable',
-      serviceType: 'Enable'
+      serviceType: 'web_connect/srv/Enable'
     });
 
     return new Promise((resolve, reject) => {
@@ -196,7 +196,7 @@ export class ROS2Connection {
       this.pumpTopic = new ROSLIB.Topic({
         ros: this.ros,
         name: '/pump_control',
-        messageType: 'Pump'
+        messageType: 'web_connect/msg/Pump'
       });
     }
 
@@ -211,7 +211,7 @@ export class ROS2Connection {
       this.chassisTopic = new ROSLIB.Topic({
         ros: this.ros,
         name: '/chassis_control',
-        messageType: 'Chassis'
+        messageType: 'web_connect/msg/Chassis'
       });
     }
 
@@ -226,7 +226,7 @@ export class ROS2Connection {
       this.armTopic = new ROSLIB.Topic({
         ros: this.ros,
         name: '/arm_control',
-        messageType: 'Arm'
+        messageType: 'web_connect/msg/Arm'
       });
     }
 
@@ -240,7 +240,7 @@ export class ROS2Connection {
     const service = new ROSLIB.Service({
       ros: this.ros,
       name: '/semi_mode',
-      serviceType: 'Semi'
+      serviceType: 'web_connect/srv/Semi'
     });
 
     return new Promise((resolve, reject) => {
@@ -260,7 +260,7 @@ export class ROS2Connection {
     const service = new ROSLIB.Service({
       ros: this.ros,
       name: '/stop',
-      serviceType: 'Stop'
+      serviceType: 'web_connect/srv/Stop'
     });
 
     return new Promise((resolve, reject) => {
@@ -280,7 +280,7 @@ export class ROS2Connection {
     const service = new ROSLIB.Service({
       ros: this.ros,
       name: '/machine_mode',
-      serviceType: 'Mode'
+      serviceType: 'web_connect/srv/Mode'
     });
 
     return new Promise((resolve, reject) => {
