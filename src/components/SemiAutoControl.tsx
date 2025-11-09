@@ -265,49 +265,50 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
           </div>
         </div>
 
-        {/* 提交按钮 */}
-        {!isConfigured && (
+        {/* 按钮区域 */}
+        <div className="space-y-3">
+          {/* 设置施工模式按钮 */}
           <Button
             onClick={handleSubmit}
-            disabled={!isConnected}
+            disabled={!isConnected || isConfigured}
             className="w-full"
           >
             设置施工模式
           </Button>
-        )}
 
-        {/* 停止和更换按钮 */}
-        {isConfigured && !isStopped && (
-          <div className="flex gap-3">
-            <Button
-              onClick={() => handleStop(1)}
-              disabled={!isConnected}
-              className="flex-1"
-              variant="destructive"
-            >
-              停止
-            </Button>
-            <Button
-              onClick={() => handleStop(2)}
-              disabled={!isConnected}
-              className="flex-1"
-              variant="outline"
-            >
-              更换配件、涂料
-            </Button>
-          </div>
-        )}
+          {/* 停止和更换按钮 */}
+          {isConfigured && !isStopped && (
+            <div className="flex gap-3">
+              <Button
+                onClick={() => handleStop(1)}
+                disabled={!isConnected}
+                className="flex-1"
+                variant="destructive"
+              >
+                停止
+              </Button>
+              <Button
+                onClick={() => handleStop(2)}
+                disabled={!isConnected}
+                className="flex-1"
+                variant="outline"
+              >
+                更换配件、涂料
+              </Button>
+            </div>
+          )}
 
-        {/* 继续施工按钮 */}
-        {isStopped && (
-          <Button
-            onClick={handleContinue}
-            disabled={!isConnected}
-            className="w-full"
-          >
-            继续施工
-          </Button>
-        )}
+          {/* 继续施工按钮 */}
+          {isStopped && (
+            <Button
+              onClick={handleContinue}
+              disabled={!isConnected}
+              className="w-full"
+            >
+              继续施工
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
