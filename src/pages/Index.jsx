@@ -32,7 +32,7 @@ const Index = () => {
             <CardDescription>手动/半自动</CardDescription>
           </CardHeader>
           <CardContent>
-            <p>连接成功后，访问"手动/半自动施工"页面进行机器人控制。</p>
+            <p>连接成功后，在左侧菜单访问"手动/半自动施工"页面进行机器人控制。</p>
           </CardContent>
         </Card>
       </div>
