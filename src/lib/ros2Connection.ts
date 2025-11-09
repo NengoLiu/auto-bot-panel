@@ -80,22 +80,40 @@ export class ROS2Connection {
 
   connect(url: string): Promise<void> {
     return new Promise((resolve, reject) => {
+      console.log('正在连接到 ROS2 WebSocket 服务器:', url);
+      
+      // 添加连接超时
+      const timeout = setTimeout(() => {
+        if (this.ros) {
+          this.ros.close();
+        }
+        reject(new Error('连接超时：无法连接到 ROS2 服务器。请检查：\n1. ROS2 rosbridge_server 是否已启动\n2. IP 地址和端口是否正确\n3. 网络连接是否正常'));
+      }, 10000); // 10秒超时
+
       this.ros = new ROSLIB.Ros({
         url: url
       });
 
       this.ros.on('connection', () => {
-        console.log('Connected to ROS2 websocket server.');
+        clearTimeout(timeout);
+        console.log('✓ 成功连接到 ROS2 websocket 服务器');
         resolve();
       });
 
       this.ros.on('error', (error: any) => {
-        console.log('Error connecting to ROS2 websocket server: ', error);
-        reject(error);
+        clearTimeout(timeout);
+        console.error('✗ ROS2 连接错误:', error);
+        let errorMessage = '连接失败。';
+        
+        if (error instanceof Event) {
+          errorMessage += '\n请检查：\n1. rosbridge_server 是否运行: ros2 launch rosbridge_server rosbridge_websocket_launch.xml\n2. IP 地址是否正确: ' + url + '\n3. 防火墙是否阻止了端口 9090';
+        }
+        
+        reject(new Error(errorMessage));
       });
 
       this.ros.on('close', () => {
-        console.log('Connection to ROS2 websocket server closed.');
+        console.log('ROS2 websocket 连接已关闭');
       });
     });
   }
