@@ -29,10 +29,25 @@ export interface PumpMessage {
   pump_flud: number; // 0-12 ml
 }
 
+export interface ChassisControlMessage {
+  x_speed: number; // float64 m/s
+  y_speed: number; // float64 m/s
+  z_speed: number; // float64 °/s
+}
+
+export interface ArmControlMessage {
+  yaw_angle: number; // float32 -90 to 90
+  roll_angle: number; // float32 -180 to 180
+  updown_angle: number; // float32 0-8cm
+  arm_reset: number; // uint8 0/1
+}
+
 export class ROS2Connection {
   private ros: ROSLIB.Ros | null = null;
   private connectionTopic: ROSLIB.Topic | null = null;
   private pumpTopic: ROSLIB.Topic | null = null;
+  private chassisTopic: ROSLIB.Topic | null = null;
+  private armTopic: ROSLIB.Topic | null = null;
 
   connect(url: string): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -62,6 +77,8 @@ export class ROS2Connection {
       this.ros = null;
       this.connectionTopic = null;
       this.pumpTopic = null;
+      this.chassisTopic = null;
+      this.armTopic = null;
     }
   }
 
@@ -142,6 +159,36 @@ export class ROS2Connection {
 
     const rosMessage = new ROSLIB.Message(message);
     this.pumpTopic.publish(rosMessage);
+  }
+
+  publishChassisControl(message: ChassisControlMessage) {
+    if (!this.ros) throw new Error('Not connected to ROS2');
+
+    if (!this.chassisTopic) {
+      this.chassisTopic = new ROSLIB.Topic({
+        ros: this.ros,
+        name: '/chassis_control',
+        messageType: 'Chassis'
+      });
+    }
+
+    const rosMessage = new ROSLIB.Message(message);
+    this.chassisTopic.publish(rosMessage);
+  }
+
+  publishArmControl(message: ArmControlMessage) {
+    if (!this.ros) throw new Error('Not connected to ROS2');
+
+    if (!this.armTopic) {
+      this.armTopic = new ROSLIB.Topic({
+        ros: this.ros,
+        name: '/arm_control',
+        messageType: 'Arm'
+      });
+    }
+
+    const rosMessage = new ROSLIB.Message(message);
+    this.armTopic.publish(rosMessage);
   }
 }
 

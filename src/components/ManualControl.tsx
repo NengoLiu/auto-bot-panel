@@ -5,6 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { ros2Connection } from "@/lib/ros2Connection";
+import { ChassisControl } from "@/components/ChassisControl";
+import { ArmControl } from "@/components/ArmControl";
 import { Power, Cpu, Droplets } from "lucide-react";
 
 interface ManualControlProps {
@@ -157,6 +159,7 @@ export const ManualControl = ({ isConnected }: ManualControlProps) => {
 
   return (
     <div className="space-y-6">
+      {/* Enable Controls */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -201,6 +204,13 @@ export const ManualControl = ({ isConnected }: ManualControlProps) => {
         </Card>
       </div>
 
+      {/* Chassis Control */}
+      <ChassisControl isEnabled={chassisEnabled} isConnected={isConnected} />
+
+      {/* Arm Control */}
+      <ArmControl isEnabled={armEnabled} isConnected={isConnected} />
+
+      {/* Pump Control */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
