@@ -11,30 +11,30 @@ import ROSLIB from 'roslib';
 import { Activity, XCircle } from "lucide-react";
 
 const Manual = () => {
-  // 连接状态
+  // ROS2连接配置
+  const ROS_WS_URL = 'ws://192.168.137.96:9090';
+  
+  // 状态管理
   const [ros, setRos] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [rosUrl, setRosUrl] = useState('ws://192.168.137.96:9090');
-  const [isConnecting, setIsConnecting] = useState(false);
-
+  const [rosUrl, setRosUrl] = useState(ROS_WS_URL);
+  
+  // Topics
+  let pumpTopic = null;
+  let chassisTopic = null;
+  let armTopic = null;
+  
   // 控制状态
   const [chassisEnabled, setChassisEnabled] = useState(false);
   const [armEnabled, setArmEnabled] = useState(false);
   const [pumpEnabled, setPumpEnabled] = useState(false);
   const [pumpSpeed, setPumpSpeed] = useState(100);
   const [pumpFluid, setPumpFluid] = useState(6);
-
-  // 底盘控制
-  const [xSpeed, setXSpeed] = useState(0);
-  const [ySpeed, setYSpeed] = useState(0);
-  const [zSpeed, setZSpeed] = useState(0);
-
-  // 机械臂控制
   const [yawAngle, setYawAngle] = useState(0);
   const [rollAngle, setRollAngle] = useState(0);
   const [updownAngle, setUpdownAngle] = useState(4);
-
-  // 半自动模式
+  
+  // 半自动配置
   const [bladeRoller, setBladeRoller] = useState('0');
   const [direction, setDirection] = useState('0');
   const [width, setWidth] = useState('1300');
@@ -44,180 +44,105 @@ const Manual = () => {
   const [isStopped, setIsStopped] = useState(false);
   const [lastConfig, setLastConfig] = useState(null);
 
-  // Topics
-  const [pumpTopic, setPumpTopic] = useState(null);
-  const [chassisTopic, setChassisTopic] = useState(null);
-  const [armTopic, setArmTopic] = useState(null);
-
-  // 连接ROS2
+  // ========== ROS2连接函数 ==========
   const connectROS = () => {
-    setIsConnecting(true);
-    
-    const newRos = new ROSLIB.Ros({
-      url: rosUrl
-    });
-
-    const timeout = setTimeout(() => {
-      newRos.close();
-      toast.error("连接超时，请检查ROS2服务器");
-      setIsConnecting(false);
-    }, 10000);
+    const newRos = new ROSLIB.Ros({ url: rosUrl });
 
     newRos.on('connection', () => {
-      clearTimeout(timeout);
-      console.log('✓ 连接成功');
+      console.log('已连接到ROS2服务器');
       setRos(newRos);
       setIsConnected(true);
-      setIsConnecting(false);
-      toast.success("已成功连接到ROS2服务器");
+      toast.success("已连接到ROS2");
 
       // 初始化Topics
-      const pump = new ROSLIB.Topic({
+      pumpTopic = new ROSLIB.Topic({
         ros: newRos,
         name: '/pump_control',
         messageType: 'web_connect/msg/Pump'
       });
-      setPumpTopic(pump);
 
-      const chassis = new ROSLIB.Topic({
+      chassisTopic = new ROSLIB.Topic({
         ros: newRos,
         name: '/chassis_control',
         messageType: 'web_connect/msg/Chassis'
       });
-      setChassisTopic(chassis);
 
-      const arm = new ROSLIB.Topic({
+      armTopic = new ROSLIB.Topic({
         ros: newRos,
         name: '/arm_control',
         messageType: 'web_connect/msg/Arm'
       });
-      setArmTopic(arm);
+
+      // 自动调用开机服务
+      callService('/connection_establish', 'web_connect/srv/Establish', { establish: 1 });
     });
 
     newRos.on('error', (error) => {
-      clearTimeout(timeout);
-      console.error('✗ 连接错误:', error);
-      toast.error("连接失败，请检查ROS2服务器地址");
-      setIsConnecting(false);
+      console.error('连接错误:', error);
+      toast.error("连接失败");
     });
 
     newRos.on('close', () => {
       console.log('连接已关闭');
       setIsConnected(false);
       setRos(null);
+      pumpTopic = null;
+      chassisTopic = null;
+      armTopic = null;
+      
+      // 自动调用关机服务
+      callService('/connection_establish', 'web_connect/srv/Establish', { establish: 0 });
     });
   };
 
-  // 断开连接
   const disconnectROS = () => {
     if (ros) {
       ros.close();
-      setRos(null);
-      setIsConnected(false);
-      setPumpTopic(null);
-      setChassisTopic(null);
-      setArmTopic(null);
       toast.info("已断开连接");
     }
   };
 
-  // 调用Service的通用函数
+  // ========== ROS2服务调用 ==========
   const callService = (serviceName, serviceType, request) => {
-    return new Promise((resolve, reject) => {
-      if (!ros) {
-        reject(new Error('未连接到ROS2'));
-        return;
-      }
-
-      const service = new ROSLIB.Service({
-        ros: ros,
-        name: serviceName,
-        serviceType: serviceType
-      });
-
-      const rosRequest = new ROSLIB.ServiceRequest(request);
-
-      service.callService(rosRequest, 
-        (result) => {
-          console.log('Service调用成功:', result);
-          resolve(result);
-        },
-        (error) => {
-          console.error('Service调用失败:', error);
-          reject(new Error(error));
-        }
-      );
-    });
-  };
-
-  // 开关机
-  const handlePowerControl = async (establish) => {
-    try {
-      const response = await callService(
-        '/connection_establish',
-        'web_connect/srv/Establish',
-        { establish }
-      );
-      
-      if (response.establish_ack === 1) {
-        toast.success(establish === 1 ? "开机成功" : "关机成功");
-      } else {
-        toast.error("操作失败");
-      }
-    } catch (error) {
-      toast.error("操作失败: " + error.message);
-    }
-  };
-
-  // 底盘使能
-  const handleChassisEnable = async () => {
-    try {
-      const motor_cmd = chassisEnabled ? 0 : 1;
-      const response = await callService(
-        '/chassis_enable',
-        'web_connect/srv/Enable',
-        { motor_cmd }
-      );
-      
-      if (response.motor_ack === 1) {
-        setChassisEnabled(!chassisEnabled);
-        toast.success(chassisEnabled ? "底盘已禁用" : "底盘已使能");
-      } else {
-        toast.error("底盘使能操作失败");
-      }
-    } catch (error) {
-      toast.error("底盘使能失败: " + error.message);
-    }
-  };
-
-  // 机械臂使能
-  const handleArmEnable = async () => {
-    try {
-      const motor_cmd = armEnabled ? 0 : 1;
-      const response = await callService(
-        '/arm_enable',
-        'web_connect/srv/Enable',
-        { motor_cmd }
-      );
-      
-      if (response.arm_ack === 1) {
-        setArmEnabled(!armEnabled);
-        toast.success(armEnabled ? "机械臂已禁用" : "机械臂已使能");
-      } else {
-        toast.error("机械臂使能操作失败");
-      }
-    } catch (error) {
-      toast.error("机械臂使能失败: " + error.message);
-    }
-  };
-
-  // 泵控制
-  const handlePumpSwitch = () => {
-    if (!pumpTopic) {
-      toast.error("未连接到ROS2");
+    if (!ros) {
+      toast.error('未连接到ROS2');
       return;
     }
 
+    const service = new ROSLIB.Service({
+      ros: ros,
+      name: serviceName,
+      serviceType: serviceType
+    });
+
+    const rosRequest = new ROSLIB.ServiceRequest(request);
+
+    service.callService(rosRequest, (result) => {
+      console.log('服务响应:', result);
+    });
+  };
+
+  // ========== 控制函数 ==========
+  const handleChassisEnable = () => {
+    const motor_cmd = chassisEnabled ? 0 : 1;
+    callService('/chassis_enable', 'web_connect/srv/Enable', { motor_cmd });
+    setChassisEnabled(!chassisEnabled);
+    toast.success(chassisEnabled ? "底盘已禁用" : "底盘已使能");
+  };
+
+  const handleArmEnable = () => {
+    const motor_cmd = armEnabled ? 0 : 1;
+    callService('/arm_enable', 'web_connect/srv/Enable', { motor_cmd });
+    setArmEnabled(!armEnabled);
+    toast.success(armEnabled ? "机械臂已禁用" : "机械臂已使能");
+  };
+
+  const handlePumpSwitch = () => {
+    if (!ros || !pumpTopic) {
+      toast.error("未连接到ROS2");
+      return;
+    }
+    
     const newState = !pumpEnabled;
     setPumpEnabled(newState);
 
@@ -231,36 +156,33 @@ const Manual = () => {
     toast.success(newState ? "泵已开启" : "泵已关闭");
   };
 
-  // 底盘控制发布
   const publishChassisControl = (x, y, z) => {
-    if (!chassisTopic) return;
-
+    if (!ros || !chassisTopic) return;
+    
     const message = new ROSLIB.Message({
       x_speed: x,
       y_speed: y,
       z_speed: z
     });
-
+    
     chassisTopic.publish(message);
   };
 
-  // 机械臂控制发布
   const publishArmControl = () => {
-    if (!armTopic) return;
-
+    if (!ros || !armTopic) return;
+    
     const message = new ROSLIB.Message({
       yaw_angle: yawAngle,
       roll_angle: rollAngle,
       updown_angle: updownAngle,
       arm_reset: 0
     });
-
+    
     armTopic.publish(message);
   };
 
-  // 机械臂复位
   const handleArmReset = () => {
-    if (!armTopic) {
+    if (!ros || !armTopic) {
       toast.error("未连接到ROS2");
       return;
     }
@@ -273,125 +195,68 @@ const Manual = () => {
     });
 
     armTopic.publish(message);
-    
     setYawAngle(0);
     setRollAngle(0);
     setUpdownAngle(4);
-    
     toast.success("机械臂已复位");
   };
 
-  // 半自动模式提交
-  const handleSemiAutoSubmit = async () => {
-    try {
-      const config = {
-        blade_roller: parseInt(bladeRoller),
-        direction: parseInt(direction),
-        width: parseFloat(width),
-        length: parseFloat(length),
-        thickness: parseFloat(thickness)
-      };
+  const handleSemiAutoSubmit = () => {
+    const config = {
+      blade_roller: parseInt(bladeRoller),
+      direction: parseInt(direction),
+      width: parseFloat(width),
+      length: parseFloat(length),
+      thickness: parseFloat(thickness)
+    };
 
-      const response = await callService(
-        '/semi_mode',
-        'web_connect/srv/Semi',
-        config
-      );
-
-      if (response.ack === 1) {
-        setIsConfigured(true);
-        setIsStopped(false);
-        setLastConfig(config);
-        toast.success("半自动模式配置成功");
-      } else {
-        toast.error("配置失败");
-      }
-    } catch (error) {
-      toast.error("配置失败: " + error.message);
-    }
+    callService('/semi_mode', 'web_connect/srv/Semi', config);
+    setIsConfigured(true);
+    setIsStopped(false);
+    setLastConfig(config);
+    toast.success("开始施工");
   };
 
-  // 停止
-  const handleStop = async (stopCmd) => {
-    try {
-      const response = await callService(
-        '/stop',
-        'web_connect/srv/Stop',
-        { stop_cmd: stopCmd }
-      );
-
-      if (response.stop_ack === 1) {
-        setIsStopped(true);
-        const messages = ["已停止", "已发送紧急停止", "需要更换料筒"];
-        toast.success(messages[stopCmd] || "已停止");
-      } else {
-        toast.error("停止失败");
-      }
-    } catch (error) {
-      toast.error("停止失败: " + error.message);
-    }
+  const handleStop = (stopCmd) => {
+    callService('/stop', 'web_connect/srv/Stop', { stop_cmd: stopCmd });
+    setIsStopped(true);
+    const messages = ["已停止", "紧急停止", "更换料筒"];
+    toast.success(messages[stopCmd] || "已停止");
   };
 
-  // 继续施工
-  const handleContinue = async () => {
+  const handleContinue = () => {
     if (!lastConfig) {
-      toast.error("没有上次的配置");
+      toast.error("没有配置");
       return;
     }
-
-    try {
-      const response = await callService(
-        '/semi_mode',
-        'web_connect/srv/Semi',
-        lastConfig
-      );
-
-      if (response.ack === 1) {
-        setIsStopped(false);
-        toast.success("继续施工");
-      } else {
-        toast.error("继续失败");
-      }
-    } catch (error) {
-      toast.error("继续失败: " + error.message);
-    }
+    
+    callService('/semi_mode', 'web_connect/srv/Semi', lastConfig);
+    setIsStopped(false);
+    toast.success("继续施工");
   };
 
-  // 切换模式
-  const handleModeChange = async (value) => {
+  const handleModeChange = (value) => {
     if (!isConnected) {
-      toast.error("未连接到ROS");
+      toast.error("未连接");
       return;
     }
 
-    try {
-      const mode_cmd = value === "manual" ? 1 : 2;
-      const response = await callService(
-        '/machine_mode',
-        'web_connect/srv/Mode',
-        { mode_cmd }
-      );
-
-      if (response.mode_ack === 1) {
-        toast.success(value === "manual" ? "已切换到手动模式" : "已切换到半自动模式");
-      } else {
-        toast.error("模式切换失败");
-      }
-    } catch (error) {
-      toast.error("模式切换失败: " + error.message);
-    }
+    const mode_cmd = value === "manual" ? 1 : 2;
+    callService('/machine_mode', 'web_connect/srv/Mode', { mode_cmd });
+    toast.success(value === "manual" ? "手动模式" : "半自动模式");
   };
 
-  // 实时发布机械臂控制
+  // 机械臂控制实时发布
   useEffect(() => {
-    if (armEnabled) {
+    if (armEnabled && ros && armTopic) {
       publishArmControl();
     }
-  }, [yawAngle, rollAngle, updownAngle, armEnabled]);
+  }, [yawAngle, rollAngle, updownAngle, armEnabled, ros]);
 
+  // ========== UI渲染 ==========
   return (
     <div className="p-6">
-      {/* 连接栏 */}
+      {/* ROS2连接 */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>ROS2 连接</CardTitle>
@@ -416,27 +281,10 @@ const Manual = () => {
                 {isConnected ? "已连接" : "未连接"}
               </span>
             </div>
-            {!isConnected ? (
-              <Button onClick={connectROS} disabled={isConnecting}>
-                {isConnecting ? "连接中..." : "连接"}
-              </Button>
-            ) : (
-              <Button onClick={disconnectROS} variant="destructive">
-                断开
-              </Button>
-            )}
+            <Button onClick={isConnected ? disconnectROS : connectROS}>
+              {isConnected ? "断开" : "连接"}
+            </Button>
           </div>
-          
-          {isConnected && (
-            <div className="flex gap-2 mt-4">
-              <Button onClick={() => handlePowerControl(1)} variant="outline">
-                开机
-              </Button>
-              <Button onClick={() => handlePowerControl(0)} variant="outline">
-                关机
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -470,57 +318,57 @@ const Manual = () => {
 
                 {chassisEnabled && (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="col-start-2">
-                        <Button
-                          className="w-full"
-                          onMouseDown={() => { setXSpeed(0.5); publishChassisControl(0.5, ySpeed, zSpeed); }}
-                          onMouseUp={() => { setXSpeed(0); publishChassisControl(0, ySpeed, zSpeed); }}
-                          onMouseLeave={() => { setXSpeed(0); publishChassisControl(0, ySpeed, zSpeed); }}
-                        >
-                          ↑
-                        </Button>
-                      </div>
-                      <Button
-                        onMouseDown={() => { setYSpeed(-0.5); publishChassisControl(xSpeed, -0.5, zSpeed); }}
-                        onMouseUp={() => { setYSpeed(0); publishChassisControl(xSpeed, 0, zSpeed); }}
-                        onMouseLeave={() => { setYSpeed(0); publishChassisControl(xSpeed, 0, zSpeed); }}
-                      >
-                        ←
-                      </Button>
-                      <Button
-                        onMouseDown={() => { setXSpeed(-0.5); publishChassisControl(-0.5, ySpeed, zSpeed); }}
-                        onMouseUp={() => { setXSpeed(0); publishChassisControl(0, ySpeed, zSpeed); }}
-                        onMouseLeave={() => { setXSpeed(0); publishChassisControl(0, ySpeed, zSpeed); }}
-                      >
-                        ↓
-                      </Button>
-                      <Button
-                        onMouseDown={() => { setYSpeed(0.5); publishChassisControl(xSpeed, 0.5, zSpeed); }}
-                        onMouseUp={() => { setYSpeed(0); publishChassisControl(xSpeed, 0, zSpeed); }}
-                        onMouseLeave={() => { setYSpeed(0); publishChassisControl(xSpeed, 0, zSpeed); }}
-                      >
-                        →
-                      </Button>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        className="flex-1"
-                        onMouseDown={() => { setZSpeed(30); publishChassisControl(xSpeed, ySpeed, 30); }}
-                        onMouseUp={() => { setZSpeed(0); publishChassisControl(xSpeed, ySpeed, 0); }}
-                        onMouseLeave={() => { setZSpeed(0); publishChassisControl(xSpeed, ySpeed, 0); }}
-                      >
-                        ↺ 左转
-                      </Button>
-                      <Button
-                        className="flex-1"
-                        onMouseDown={() => { setZSpeed(-30); publishChassisControl(xSpeed, ySpeed, -30); }}
-                        onMouseUp={() => { setZSpeed(0); publishChassisControl(xSpeed, ySpeed, 0); }}
-                        onMouseLeave={() => { setZSpeed(0); publishChassisControl(xSpeed, ySpeed, 0); }}
-                      >
-                        ↻ 右转
-                      </Button>
-                    </div>
+                     <div className="grid grid-cols-3 gap-2">
+                       <div className="col-start-2">
+                         <Button
+                           className="w-full"
+                           onMouseDown={() => publishChassisControl(0.5, 0, 0)}
+                           onMouseUp={() => publishChassisControl(0, 0, 0)}
+                           onMouseLeave={() => publishChassisControl(0, 0, 0)}
+                         >
+                           ↑
+                         </Button>
+                       </div>
+                       <Button
+                         onMouseDown={() => publishChassisControl(0, -0.5, 0)}
+                         onMouseUp={() => publishChassisControl(0, 0, 0)}
+                         onMouseLeave={() => publishChassisControl(0, 0, 0)}
+                       >
+                         ←
+                       </Button>
+                       <Button
+                         onMouseDown={() => publishChassisControl(-0.5, 0, 0)}
+                         onMouseUp={() => publishChassisControl(0, 0, 0)}
+                         onMouseLeave={() => publishChassisControl(0, 0, 0)}
+                       >
+                         ↓
+                       </Button>
+                       <Button
+                         onMouseDown={() => publishChassisControl(0, 0.5, 0)}
+                         onMouseUp={() => publishChassisControl(0, 0, 0)}
+                         onMouseLeave={() => publishChassisControl(0, 0, 0)}
+                       >
+                         →
+                       </Button>
+                     </div>
+                     <div className="flex gap-2">
+                       <Button
+                         className="flex-1"
+                         onMouseDown={() => publishChassisControl(0, 0, 30)}
+                         onMouseUp={() => publishChassisControl(0, 0, 0)}
+                         onMouseLeave={() => publishChassisControl(0, 0, 0)}
+                       >
+                         ↺ 左转
+                       </Button>
+                       <Button
+                         className="flex-1"
+                         onMouseDown={() => publishChassisControl(0, 0, -30)}
+                         onMouseUp={() => publishChassisControl(0, 0, 0)}
+                         onMouseLeave={() => publishChassisControl(0, 0, 0)}
+                       >
+                         ↻ 右转
+                       </Button>
+                     </div>
                   </div>
                 )}
               </CardContent>
