@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ManualControl } from "@/components/ManualControl";
+import  ManualControl  from "@/components/ManualControl";
 import { SemiAutoControl } from "@/components/SemiAutoControl";
 import { ros2Connection } from "@/lib/ros2Connection";
 import { toast } from "sonner";

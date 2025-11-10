@@ -16,7 +16,7 @@ const menuItems = [
   { title: "故障管理", url: "/fault", icon: AlertTriangle },
   { title: "路径规划", url: "/path", icon: Map },
   { title: "全自动施工", url: "/auto", icon: Cog },
-  { title: "手动/半自动施工", url: "/", icon: Hand },
+  { title: "手动/半自动施工", url: "/manual", icon: Hand },
   { title: "遥控界面", url: "/remote", icon: Gamepad2 },
 ];
 
