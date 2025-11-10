@@ -200,6 +200,8 @@ export class ROS2Connection {
         name: '/pump_control',
         messageType: 'web_connect/msg/Pump'
       });
+      this.pumpTopic.advertise();
+      console.log('✓ 泵控制话题已广告');
     }
 
     const rosMessage = new ROSLIB.Message(message);
@@ -220,6 +222,8 @@ export class ROS2Connection {
         name: '/chassis_control',
         messageType: 'web_connect/msg/Chassis'
       });
+      this.chassisTopic.advertise();
+      console.log('✓ 底盘控制话题已广告');
     }
 
     const rosMessage = new ROSLIB.Message(message);
@@ -240,6 +244,8 @@ export class ROS2Connection {
         name: '/arm_control',
         messageType: 'web_connect/msg/Arm'
       });
+      this.armTopic.advertise();
+      console.log('✓ 机械臂控制话题已广告');
     }
 
     const rosMessage = new ROSLIB.Message(message);
