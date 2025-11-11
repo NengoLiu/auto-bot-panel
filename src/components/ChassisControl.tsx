@@ -24,7 +24,8 @@ export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) 
     });
   }, [isConnected, isEnabled]);
 
-  const handleDirectionPress = useCallback((direction: 'forward' | 'backward' | 'left' | 'right') => {
+  const handleDirectionPress = useCallback((direction: 'forward' | 'backward' | 'left' | 'right', e?: React.TouchEvent | React.MouseEvent) => {
+    if (e) e.preventDefault();
     setActiveDirection(direction);
     const currentSpeed = speed;
     
@@ -44,7 +45,8 @@ export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) 
     }
   }, [speed, sendControl]);
 
-  const handleRotationPress = useCallback((direction: 'ccw' | 'cw') => {
+  const handleRotationPress = useCallback((direction: 'ccw' | 'cw', e?: React.TouchEvent | React.MouseEvent) => {
+    if (e) e.preventDefault();
     setActiveDirection(direction);
     const currentSpeed = speed;
     const zSpeed = currentSpeed * 206.7;
@@ -52,7 +54,8 @@ export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) 
     sendControl(0, 0, direction === 'ccw' ? -zSpeed : zSpeed);
   }, [speed, sendControl]);
 
-  const handleRelease = useCallback(() => {
+  const handleRelease = useCallback((e?: React.TouchEvent | React.MouseEvent) => {
+    if (e) e.preventDefault();
     setActiveDirection(null);
     sendControl(0, 0, 0);
   }, [sendControl]);
@@ -103,9 +106,9 @@ export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) 
     setSpeed(prev => Math.min(Math.max(prev + delta, 0), 2));
   };
 
-  const buttonClass = "w-20 h-20 rounded-lg flex items-center justify-center transition-all cursor-pointer select-none";
-  const activeClass = "bg-primary text-primary-foreground";
-  const inactiveClass = "bg-secondary hover:bg-secondary/80";
+  const buttonClass = "w-20 h-20 rounded-lg flex items-center justify-center transition-all cursor-pointer select-none touch-none active:scale-95";
+  const activeClass = "bg-primary text-primary-foreground shadow-lg";
+  const inactiveClass = "bg-secondary hover:bg-secondary/80 active:bg-secondary/90";
   const disabledClass = "opacity-50 cursor-not-allowed";
 
   return (
@@ -122,17 +125,18 @@ export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) 
       <CardContent className="space-y-6">
         {/* Directional Control Pad */}
         <div className="flex flex-col items-center gap-4">
-          <div className="relative w-64 h-64 rounded-full bg-muted flex items-center justify-center">
+          <div className="relative w-64 h-64 max-w-[90vw] max-h-[90vw] rounded-full bg-muted flex items-center justify-center">
             {/* Forward */}
             <div
               className={`absolute top-4 left-1/2 -translate-x-1/2 ${buttonClass} ${
                 activeDirection === 'forward' ? activeClass : inactiveClass
               } ${!isEnabled ? disabledClass : ''}`}
-              onMouseDown={() => isEnabled && handleDirectionPress('forward')}
+              onMouseDown={(e) => isEnabled && handleDirectionPress('forward', e)}
               onMouseUp={handleRelease}
               onMouseLeave={handleRelease}
-              onTouchStart={() => isEnabled && handleDirectionPress('forward')}
+              onTouchStart={(e) => isEnabled && handleDirectionPress('forward', e)}
               onTouchEnd={handleRelease}
+              onTouchCancel={handleRelease}
             >
               <ChevronUp className="w-12 h-12" />
             </div>
@@ -142,11 +146,12 @@ export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) 
               className={`absolute left-4 top-1/2 -translate-y-1/2 ${buttonClass} ${
                 activeDirection === 'left' ? activeClass : inactiveClass
               } ${!isEnabled ? disabledClass : ''}`}
-              onMouseDown={() => isEnabled && handleDirectionPress('left')}
+              onMouseDown={(e) => isEnabled && handleDirectionPress('left', e)}
               onMouseUp={handleRelease}
               onMouseLeave={handleRelease}
-              onTouchStart={() => isEnabled && handleDirectionPress('left')}
+              onTouchStart={(e) => isEnabled && handleDirectionPress('left', e)}
               onTouchEnd={handleRelease}
+              onTouchCancel={handleRelease}
             >
               <ChevronLeft className="w-12 h-12" />
             </div>
@@ -156,11 +161,12 @@ export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) 
               className={`absolute right-4 top-1/2 -translate-y-1/2 ${buttonClass} ${
                 activeDirection === 'right' ? activeClass : inactiveClass
               } ${!isEnabled ? disabledClass : ''}`}
-              onMouseDown={() => isEnabled && handleDirectionPress('right')}
+              onMouseDown={(e) => isEnabled && handleDirectionPress('right', e)}
               onMouseUp={handleRelease}
               onMouseLeave={handleRelease}
-              onTouchStart={() => isEnabled && handleDirectionPress('right')}
+              onTouchStart={(e) => isEnabled && handleDirectionPress('right', e)}
               onTouchEnd={handleRelease}
+              onTouchCancel={handleRelease}
             >
               <ChevronRight className="w-12 h-12" />
             </div>
@@ -170,11 +176,12 @@ export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) 
               className={`absolute bottom-4 left-1/2 -translate-x-1/2 ${buttonClass} ${
                 activeDirection === 'backward' ? activeClass : inactiveClass
               } ${!isEnabled ? disabledClass : ''}`}
-              onMouseDown={() => isEnabled && handleDirectionPress('backward')}
+              onMouseDown={(e) => isEnabled && handleDirectionPress('backward', e)}
               onMouseUp={handleRelease}
               onMouseLeave={handleRelease}
-              onTouchStart={() => isEnabled && handleDirectionPress('backward')}
+              onTouchStart={(e) => isEnabled && handleDirectionPress('backward', e)}
               onTouchEnd={handleRelease}
+              onTouchCancel={handleRelease}
             >
               <ChevronDown className="w-12 h-12" />
             </div>
@@ -186,11 +193,12 @@ export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) 
               className={`w-24 h-24 ${buttonClass} ${
                 activeDirection === 'ccw' ? activeClass : inactiveClass
               } ${!isEnabled ? disabledClass : ''}`}
-              onMouseDown={() => isEnabled && handleRotationPress('ccw')}
+              onMouseDown={(e) => isEnabled && handleRotationPress('ccw', e)}
               onMouseUp={handleRelease}
               onMouseLeave={handleRelease}
-              onTouchStart={() => isEnabled && handleRotationPress('ccw')}
+              onTouchStart={(e) => isEnabled && handleRotationPress('ccw', e)}
               onTouchEnd={handleRelease}
+              onTouchCancel={handleRelease}
             >
               <RotateCcw className="w-10 h-10" />
             </div>
@@ -199,11 +207,12 @@ export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) 
               className={`w-24 h-24 ${buttonClass} ${
                 activeDirection === 'cw' ? activeClass : inactiveClass
               } ${!isEnabled ? disabledClass : ''}`}
-              onMouseDown={() => isEnabled && handleRotationPress('cw')}
+              onMouseDown={(e) => isEnabled && handleRotationPress('cw', e)}
               onMouseUp={handleRelease}
               onMouseLeave={handleRelease}
-              onTouchStart={() => isEnabled && handleRotationPress('cw')}
+              onTouchStart={(e) => isEnabled && handleRotationPress('cw', e)}
               onTouchEnd={handleRelease}
+              onTouchCancel={handleRelease}
             >
               <RotateCw className="w-10 h-10" />
             </div>
@@ -213,13 +222,13 @@ export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) 
         {/* Speed Control */}
         <div className="space-y-3">
           <Label>底盘速度</Label>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-center gap-3">
             <Button
               variant="outline"
               size="lg"
               onClick={() => adjustSpeed(-0.1)}
               disabled={!isEnabled}
-              className="flex-1"
+              className="flex-1 w-full sm:w-auto"
             >
               <Minus className="w-5 h-5 mr-2" />
               底盘速度-
@@ -233,7 +242,7 @@ export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) 
               size="lg"
               onClick={() => adjustSpeed(0.1)}
               disabled={!isEnabled}
-              className="flex-1"
+              className="flex-1 w-full sm:w-auto"
             >
               <Plus className="w-5 h-5 mr-2" />
               底盘速度+

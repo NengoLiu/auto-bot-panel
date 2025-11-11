@@ -106,16 +106,16 @@ const Manual = () => {
       />
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto p-6">
-        <Tabs value={currentMode} onValueChange={handleModeChange} className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+      <div className="flex-1 overflow-auto p-4 md:p-6">
+        <Tabs value={currentMode} onValueChange={handleModeChange} className="space-y-4 md:space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2 sticky top-0 z-10 bg-background">
             <TabsTrigger value="manual">手动模式</TabsTrigger>
             <TabsTrigger value="semiauto">半自动模式</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="manual" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-6">
+          <TabsContent value="manual" className="space-y-4 md:space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+              <div className="space-y-4 md:space-y-6">
                 <ManualControl
                   chassisEnabled={chassisEnabled}
                   armEnabled={armEnabled}
