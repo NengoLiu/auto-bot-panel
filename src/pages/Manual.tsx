@@ -1,53 +1,148 @@
+
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import  ManualControl  from "@/components/ManualControl";
-import { SemiAutoControl } from "@/components/SemiAutoControl";
+import { useToast } from "@/hooks/use-toast";
 import { ros2Connection } from "@/lib/ros2Connection";
-import { toast } from "sonner";
+import { ConnectionBar } from "@/components/ConnectionBar";
+import  ManualControl  from "@/components/ManualControl";
+import { ChassisControl } from "@/components/ChassisControl";
+import { ArmControl } from "@/components/ArmControl";
+import { SemiAutoControl } from "@/components/SemiAutoControl";
 
-interface ManualProps {
-  isConnected: boolean;
-}
+const Manual = () => {
+  const { toast } = useToast();
+  const [isConnected, setIsConnected] = useState(false);
+  const [rosUrl, setRosUrl] = useState("ws://192.168.137.96:9090");
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [chassisEnabled, setChassisEnabled] = useState(false);
+  const [armEnabled, setArmEnabled] = useState(false);
+  const [currentMode, setCurrentMode] = useState<string>("manual");
 
-const Manual = ({ isConnected }: ManualProps) => {
-  const handleTabChange = async (value: string) => {
-    if (!isConnected) {
-      toast.error("未连接到ROS");
-      return;
-    }
-
+  const handleConnect = async () => {
+    setIsConnecting(true);
     try {
-      const mode_cmd = value === "manual" ? 1 : 2; // 1: 手动模式, 2: 半自动
-      const response = await ros2Connection.callMachineMode({ mode_cmd });
-      
-      if (response.mode_ack === 1) {
-        toast.success(value === "manual" ? "已切换到手动模式" : "已切换到半自动模式");
-      } else {
-        toast.error("模式切换失败");
-      }
-    } catch (error) {
-      console.error("Failed to switch mode:", error);
-      toast.error("模式切换失败");
+      await ros2Connection.connect(rosUrl);
+      setIsConnected(true);
+      ros2Connection.sendConnectionEstablishRequest(1);
+      toast({
+        title: "连接成功",
+        description: "已连接到 ROS2 服务器"
+      });
+    } catch (error: any) {
+      toast({
+        title: "连接失败",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsConnecting(false);
     }
   };
 
+  const handleDisconnect = () => {
+    ros2Connection.sendConnectionEstablishRequest(0);
+    ros2Connection.disconnect();
+    setIsConnected(false);
+    setChassisEnabled(false);
+    setArmEnabled(false);
+    toast({
+      title: "已断开连接",
+      description: "已断开与 ROS2 服务器的连接"
+    });
+  };
+
+  const handleChassisToggle = () => {
+    const newState = !chassisEnabled;
+    ros2Connection.sendChassisEnableRequest(newState ? 1 : 0);
+    setChassisEnabled(newState);
+    toast({
+      title: newState ? "底盘已启用" : "底盘已禁用",
+      description: `底盘状态: ${newState ? "启用" : "禁用"}`
+    });
+  };
+
+  const handleArmToggle = () => {
+    const newState = !armEnabled;
+    ros2Connection.sendArmEnableRequest(newState ? 1 : 0);
+    setArmEnabled(newState);
+    toast({
+      title: newState ? "机械臂已启用" : "机械臂已禁用",
+      description: `机械臂状态: ${newState ? "启用" : "禁用"}`
+    });
+  };
+  
+  const handleModeChange = (mode: string) => {
+	if (!isConnected) {
+	  toast({
+		  title : "未连接",
+		  description : "请先连接ROS2服务器",
+		  variant : "destructive"
+	  });
+	  return
+	}
+	
+	setCurrentMode(mode);
+	
+	const mode_cmd = mode === "manual" ? 1 : 2;
+	ros2Connection.sendMachineModeRequest(mode_cmd);
+	
+	toast({
+	  title : "模式切换",
+	  description : mode === "manual" ? "已切换到手动模式" : "已切换到自动模式"
+	});
+  };
+
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">手动/半自动施工</h1>
-      
-      <Tabs defaultValue="manual" className="w-full" onValueChange={handleTabChange}>
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="manual">手动</TabsTrigger>
-          <TabsTrigger value="semi-auto">半自动</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="manual" className="mt-6">
-          <ManualControl isConnected={isConnected} />
-        </TabsContent>
-        
-        <TabsContent value="semi-auto" className="mt-6">
-          <SemiAutoControl isConnected={isConnected} />
-        </TabsContent>
-      </Tabs>
+    <div className="flex flex-col h-screen">
+      {/* Connection Bar */}
+      <ConnectionBar
+        isConnected={isConnected}
+        rosUrl={rosUrl}
+        onUrlChange={setRosUrl}
+        onConnect={handleConnect}
+        onDisconnect={handleDisconnect}
+        isConnecting={isConnecting}
+      />
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto p-6">
+        <Tabs defaultValue="manual" className="space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="manual">手动模式</TabsTrigger>
+            <TabsTrigger value="semiauto">半自动模式</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="manual" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-6">
+                <ManualControl
+                  chassisEnabled={chassisEnabled}
+                  armEnabled={armEnabled}
+                  isConnected={isConnected}
+                  onChassisToggle={handleChassisToggle}
+                  onArmToggle={handleArmToggle}
+                />
+                <ChassisControl
+                  isEnabled={chassisEnabled}
+                  isConnected={isConnected}
+                />
+              </div>
+              <div>
+                <ArmControl
+                  isEnabled={armEnabled}
+                  isConnected={isConnected}
+                />
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="semiauto" className="space-y-6">
+            <div className="flex justify-center">
+              <SemiAutoControl isConnected={isConnected} />
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };

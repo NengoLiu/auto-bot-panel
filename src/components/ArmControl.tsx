@@ -45,16 +45,23 @@ export const ArmControl = ({ isEnabled, isConnected }: ArmControlProps) => {
   };
 
   const handleReset = () => {
+	const prevEnabled = isEnabled;
+	isEnabled = false;
+	  
     setYawAngle([0]);
     setRollAngle([0]);
     setUpdownAngle([0]);
-    sendArmControl(0, 0, 0, 1);
-    
-    toast({
-      title: "机械臂复位",
-      description: "机械臂已归位到初始位置",
-    });
-  };
+	
+	setTimeout(() => {
+	  sendArmControl(0, 0, 0, 1);
+	  isEnabled = prevEnabled;
+	  
+	toast({
+	  title: "机械臂复位",
+	  description: "机械臂已归位到初始位置",
+	});
+  },0);
+};
 
   return (
     <Card>
@@ -153,3 +160,4 @@ export const ArmControl = ({ isEnabled, isConnected }: ArmControlProps) => {
     </Card>
   );
 };
+

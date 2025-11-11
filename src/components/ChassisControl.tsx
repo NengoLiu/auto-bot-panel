@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import { ros2Connection } from "@/lib/ros2Connection";
-import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, RotateCcw, RotateCw, Navigation } from "lucide-react";
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, RotateCcw, RotateCw, Navigation, Minus, Plus } from "lucide-react";
 
 interface ChassisControlProps {
   isEnabled: boolean;
@@ -11,7 +11,7 @@ interface ChassisControlProps {
 }
 
 export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) => {
-  const [speed, setSpeed] = useState([0.5]);
+  const [speed, setSpeed] = useState(0.5);
   const [activeDirection, setActiveDirection] = useState<string | null>(null);
 
   const sendControl = useCallback((x: number, y: number, z: number) => {
@@ -26,7 +26,7 @@ export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) 
 
   const handleDirectionPress = useCallback((direction: 'forward' | 'backward' | 'left' | 'right') => {
     setActiveDirection(direction);
-    const currentSpeed = speed[0];
+    const currentSpeed = speed;
     
     switch (direction) {
       case 'forward':
@@ -46,10 +46,10 @@ export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) 
 
   const handleRotationPress = useCallback((direction: 'ccw' | 'cw') => {
     setActiveDirection(direction);
-    const currentSpeed = speed[0];
+    const currentSpeed = speed;
     const zSpeed = currentSpeed * 206.7;
     
-    sendControl(0, 0, direction === 'ccw' ? zSpeed : -zSpeed);
+    sendControl(0, 0, direction === 'ccw' ? -zSpeed : zSpeed);
   }, [speed, sendControl]);
 
   const handleRelease = useCallback(() => {
@@ -99,6 +99,10 @@ export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) 
     };
   }, [isEnabled, isConnected, activeDirection, handleDirectionPress, handleRelease]);
 
+  const adjustSpeed = (delta: number) => {
+    setSpeed(prev => Math.min(Math.max(prev + delta, 0), 2));
+  };
+
   const buttonClass = "w-20 h-20 rounded-lg flex items-center justify-center transition-all cursor-pointer select-none";
   const activeClass = "bg-primary text-primary-foreground";
   const inactiveClass = "bg-secondary hover:bg-secondary/80";
@@ -109,7 +113,7 @@ export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) 
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Navigation className="w-5 h-5" />
-          底盘控制
+          底盘控制长按有效
         </CardTitle>
         <CardDescription>
           {isEnabled ? "使用方向按钮或键盘 W/S/A/D 控制底盘移动" : "请先启用底盘"}
@@ -207,21 +211,48 @@ export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) 
         </div>
 
         {/* Speed Control */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <Label>移动速度 (m/s)</Label>
-            <span className="text-sm font-medium">{speed[0].toFixed(2)} m/s</span>
+        <div className="space-y-3">
+          <Label>底盘速度</Label>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => adjustSpeed(-0.1)}
+              disabled={!isEnabled}
+              className="flex-1"
+            >
+              <Minus className="w-5 h-5 mr-2" />
+              底盘速度-
+            </Button>
+            <div className="flex flex-col items-center justify-center min-w-[120px] h-16 bg-muted rounded-md px-4">
+              <span className="text-xs text-muted-foreground">速度(m/s)</span>
+              <span className="text-2xl font-bold">{(speed * 1).toFixed(1)}</span>
+            </div>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => adjustSpeed(0.1)}
+              disabled={!isEnabled}
+              className="flex-1"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              底盘速度+
+            </Button>
           </div>
-          <Slider
-            value={speed}
-            onValueChange={setSpeed}
-            max={2}
-            min={0}
-            step={0.1}
-            disabled={!isEnabled}
-          />
+          <div className="text-center">
+            <Button
+              variant="default"
+              size="lg"
+              onClick={() => {/* Speed setting dialog could go here */}}
+              disabled={!isEnabled}
+              className="w-full"
+            >
+              速度设置
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
   );
 };
+

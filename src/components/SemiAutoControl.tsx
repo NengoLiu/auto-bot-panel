@@ -15,8 +15,8 @@ interface SemiAutoControlProps {
 export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
   const [bladeRoller, setBladeRoller] = useState<"0" | "1">("0");
   const [direction, setDirection] = useState<"0" | "1">("0");
-  const [width, setWidth] = useState<number>(1000);
-  const [length, setLength] = useState<number>(5000);
+  const [width, setWidth] = useState<number>(1.6);
+  const [length, setLength] = useState<number>(10);
   const [thickness, setThickness] = useState<number>(5);
   const [isConfigured, setIsConfigured] = useState<boolean>(false);
   const [isStopped, setIsStopped] = useState<boolean>(false);
@@ -39,7 +39,7 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
     setter(newValue);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!isConnected) {
       toast.error("请先建立ROS2连接");
       return;
@@ -53,45 +53,32 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
       thickness,
     };
 
-    try {
-      const response = await ros2Connection.callSemiMode(config);
+    ros2Connection.sendSemiModeRequest(
+      config.blade_roller,
+      config.direction,
+      config.width,
+      config.length,
+      config.thickness
+    );
 
-      if (response.ack === 1) {
-        toast.success("模式设置成功");
-        setIsConfigured(true);
-        setIsStopped(false);
-        setLastConfig(config);
-      } else {
-        toast.error("模式设置失败");
-      }
-    } catch (error) {
-      toast.error("设置失败: " + (error as Error).message);
-    }
+    toast.success("模式设置已发送");
+    setIsConfigured(true);
+    setIsStopped(false);
+    setLastConfig(config);
   };
 
-  const handleStop = async (stopCmd: number) => {
+  const handleStop = (stopCmd: number) => {
     if (!isConnected) {
       toast.error("请先建立ROS2连接");
       return;
     }
 
-    try {
-      const response = await ros2Connection.callStop({
-        stop_cmd: stopCmd,
-      });
-
-      if (response.stop_ack === 1) {
-        toast.success("停止指令已发送");
-        setIsStopped(true);
-      } else {
-        toast.error("停止指令失败");
-      }
-    } catch (error) {
-      toast.error("停止失败: " + (error as Error).message);
-    }
+    ros2Connection.sendStopRequest(stopCmd);
+    toast.success("停止指令已发送");
+    setIsStopped(true);
   };
 
-  const handleContinue = async () => {
+  const handleContinue = () => {
     if (!isConnected) {
       toast.error("请先建立ROS2连接");
       return;
@@ -102,18 +89,16 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
       return;
     }
 
-    try {
-      const response = await ros2Connection.callSemiMode(lastConfig);
+    ros2Connection.sendSemiModeRequest(
+      lastConfig.blade_roller,
+      lastConfig.direction,
+      lastConfig.width,
+      lastConfig.length,
+      lastConfig.thickness
+    );
 
-      if (response.ack === 1) {
-        toast.success("继续施工成功");
-        setIsStopped(false);
-      } else {
-        toast.error("继续施工失败");
-      }
-    } catch (error) {
-      toast.error("继续施工失败: " + (error as Error).message);
-    }
+    toast.success("继续施工");
+    setIsStopped(false);
   };
 
   return (
@@ -154,12 +139,12 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
 
         {/* 宽度设置 */}
         <div className="space-y-3">
-          <Label>宽度 (0-2600mm)</Label>
+          <Label>宽度 (0-2.6m)</Label>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="icon"
-              onClick={() => adjustValue(width, -10, 0, 2600, setWidth)}
+              onClick={() => adjustValue(width, -0.1, 0, 2.6, setWidth)}
               disabled={!isConnected || isConfigured}
             >
               <Minus className="h-4 w-4" />
@@ -169,33 +154,33 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
               value={width}
               onChange={(e) => {
                 const val = parseFloat(e.target.value) || 0;
-                setWidth(Math.min(Math.max(val, 0), 2600));
+                setWidth(Math.min(Math.max(val, 0), 2.6));
               }}
               className="text-center"
               disabled={!isConnected || isConfigured}
               min={0}
-              max={2600}
+              max={2.6}
             />
             <Button
               variant="outline"
               size="icon"
-              onClick={() => adjustValue(width, 10, 0, 2600, setWidth)}
+              onClick={() => adjustValue(width, 0.1, 0, 2.6, setWidth)}
               disabled={!isConnected || isConfigured}
             >
               <Plus className="h-4 w-4" />
             </Button>
-            <span className="text-sm text-muted-foreground min-w-[40px]">mm</span>
+            <span className="text-sm text-muted-foreground min-w-[40px]">m</span>
           </div>
         </div>
 
         {/* 长度设置 */}
         <div className="space-y-3">
-          <Label>长度 (0-20000mm)</Label>
+          <Label>长度 (0-20m)</Label>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="icon"
-              onClick={() => adjustValue(length, -100, 0, 20000, setLength)}
+              onClick={() => adjustValue(length, -0.1, 0, 20, setLength)}
               disabled={!isConnected || isConfigured}
             >
               <Minus className="h-4 w-4" />
@@ -205,22 +190,22 @@ export const SemiAutoControl = ({ isConnected }: SemiAutoControlProps) => {
               value={length}
               onChange={(e) => {
                 const val = parseFloat(e.target.value) || 0;
-                setLength(Math.min(Math.max(val, 0), 20000));
+                setLength(Math.min(Math.max(val, 0), 20));
               }}
               className="text-center"
               disabled={!isConnected || isConfigured}
               min={0}
-              max={20000}
+              max={20}
             />
             <Button
               variant="outline"
               size="icon"
-              onClick={() => adjustValue(length, 100, 0, 20000, setLength)}
+              onClick={() => adjustValue(length, 0.1, 0, 20, setLength)}
               disabled={!isConnected || isConfigured}
             >
               <Plus className="h-4 w-4" />
             </Button>
-            <span className="text-sm text-muted-foreground min-w-[40px]">mm</span>
+            <span className="text-sm text-muted-foreground min-w-[40px]">m</span>
           </div>
         </div>
 

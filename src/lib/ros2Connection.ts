@@ -72,6 +72,69 @@ export class ROS2Connection {
   private pumpTopic: ROSLIB.Topic | null = null;
   private chassisTopic: ROSLIB.Topic | null = null;
   private armTopic: ROSLIB.Topic | null = null;
+  private pumpTopicReady = false; // 自定义：泵话题是否准备就绪（已创建+已发布）
+  private chassisTopicReady = false; // 自定义：底盘话题是否准备就绪
+  private armTopicReady = false; // 自定义：机械臂话题是否准备就绪
+  // 重置所有话题状态的方法（统一管理）
+  private resetTopicStates() {
+    this.pumpTopicReady = false;
+    this.chassisTopicReady = false;
+    this.armTopicReady = false;
+  }
+  private initTopics() {
+    if (!this.ros) {
+      this.resetTopicStates(); // 连接无效时重置状态
+      return;
+    }
+  
+    try {
+      // 泵控制话题
+      this.pumpTopic = new ROSLIB.Topic({
+        ros: this.ros,
+        name: '/pump_control',
+        messageType: 'web_connect/msg/Pump'
+      });
+      this.pumpTopic.advertise(); // 执行发布
+      this.pumpTopicReady = true; // 手动标记为就绪
+      console.log('✓ 泵控制话题已初始化并发布');
+  
+      // 底盘控制话题
+      this.chassisTopic = new ROSLIB.Topic({
+        ros: this.ros,
+        name: '/chassis_control',
+        messageType: 'web_connect/msg/Chassis'
+      });
+      this.chassisTopic.advertise();
+      this.chassisTopicReady = true;
+      console.log('✓ 底盘控制话题已初始化并发布');
+  
+      // 机械臂控制话题
+      this.armTopic = new ROSLIB.Topic({
+        ros: this.ros,
+        name: '/arm_control',
+        messageType: 'web_connect/msg/Arm'
+      });
+      this.armTopic.advertise();
+      this.armTopicReady = true;
+      console.log('✓ 机械臂控制话题已初始化并发布');
+    } catch (error) {
+      console.error('初始化话题失败:', error);
+      this.resetTopicStates(); // 失败时重置状态
+    }
+  }
+  
+  on(eventName: string, callback: (...args: any[]) => void) {
+    if (this.ros) {
+      this.ros.on(eventName, callback);
+    }
+  }
+  
+  // 新增：代理 ros 的事件移除
+  off(eventName: string, callback: (...args: any[]) => void) {
+    if (this.ros) {
+      this.ros.off(eventName, callback);
+    }
+  }
 
   connect(url: string): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -87,6 +150,7 @@ export class ROS2Connection {
       this.ros.on('connection', () => {
         clearTimeout(timeout);
         console.log('✓ 成功连接到 ROS2 服务器');
+		this.initTopics();
         resolve();
       });
 
@@ -106,10 +170,25 @@ export class ROS2Connection {
     if (this.ros) {
       this.ros.close();
       this.ros = null;
-      this.pumpTopic = null;
-      this.chassisTopic = null;
-      this.armTopic = null;
-    }
+	}
+	if (this.pumpTopic) {
+	  this.pumpTopic.unadvertise(); // 取消发布
+	  this.pumpTopic = null;
+	}
+	if (this.chassisTopic) {
+	  this.chassisTopic.unadvertise();
+	  this.chassisTopic = null;
+	}
+	if (this.armTopic) {
+	  this.armTopic.unadvertise();
+	  this.armTopic = null;
+	}
+	
+	this.pumpTopicReady = false;
+	this.chassisTopicReady = false;
+	this.armTopicReady = false;
+	
+	console.log('已断开连接，话题已清理');
   }
 
   isConnected(): boolean {
@@ -118,8 +197,7 @@ export class ROS2Connection {
 
   sendConnectionEstablishRequest(establish: number) {
     if (!this.ros) {
-      console.error('未连接到 ROS2，无法发送请求');
-      return;
+      return Promise.reject(new Error('未连接到 ROS2，无法发送请求'));
     }
 
     const service = new ROSLIB.Service({
@@ -142,8 +220,7 @@ export class ROS2Connection {
   // 底盘使能
   sendChassisEnableRequest(motor_cmd: number) {
     if (!this.ros) {
-      console.error('未连接到 ROS2，无法发送请求');
-      return;
+      return Promise.reject(new Error('未使能底盘，无法发送请求'));
     }
 
     const service = new ROSLIB.Service({
@@ -166,8 +243,7 @@ export class ROS2Connection {
   // 机械臂使能
   sendArmEnableRequest(motor_cmd: number) {
     if (!this.ros) {
-      console.error('未连接到 ROS2，无法发送请求');
-      return;
+      return Promise.reject(new Error('未使能机械臂，无法发送请求'));
     }
 
     const service = new ROSLIB.Service({
@@ -187,61 +263,70 @@ export class ROS2Connection {
     );
   }
 
-  // 泵控制话题
-  publishPumpControl(message: PumpMessage) {
-    if (!this.ros) {
-      console.error('未连接到 ROS2，无法发布消息');
-      return;
-    }
-
-    if (!this.pumpTopic) {
-      this.pumpTopic = new ROSLIB.Topic({
-        ros: this.ros,
-        name: '/pump_control',
-        messageType: 'web_connect/msg/Pump'
-      });
-    }
-
-    const rosMessage = new ROSLIB.Message(message);
-    this.pumpTopic.publish(rosMessage);
-    console.log('泵控制消息已发布:', message);
-  }
-
-  // 底盘控制
+  // 底盘控制发布方法（仅用自定义状态判断）
   publishChassisControl(message: ChassisControlMessage) {
-    if (!this.ros) {
+    if (!this.ros || !this.ros.isConnected) {
       console.error('未连接到 ROS2，无法发布消息');
       return;
     }
-
-    if (!this.chassisTopic) {
-      this.chassisTopic = new ROSLIB.Topic({
-        ros: this.ros,
-        name: '/chassis_control',
-        messageType: 'web_connect/msg/Chassis'
-      });
+  
+    // 仅通过自定义状态标记判断（完全不依赖 Topic 类的属性）
+    if (!this.chassisTopic || !this.chassisTopicReady) {
+      console.warn('底盘控制话题未就绪，重新初始化...');
+      this.initTopics(); // 重新初始化
+  
+      // 再次检查自定义状态
+      if (!this.chassisTopic || !this.chassisTopicReady) {
+        console.error('底盘控制话题初始化失败，无法发布消息');
+        return;
+      }
     }
-
+  
+    // 发布消息
     const rosMessage = new ROSLIB.Message(message);
     this.chassisTopic.publish(rosMessage);
     console.log('底盘控制消息已发布:', message);
   }
-
-  // 机械臂控制
-  publishArmControl(message: ArmControlMessage) {
-    if (!this.ros) {
+  
+  
+  // 泵控制发布方法（同理修改）
+  publishPumpControl(message: PumpMessage) {
+    if (!this.ros || !this.ros.isConnected) {
       console.error('未连接到 ROS2，无法发布消息');
       return;
     }
-
-    if (!this.armTopic) {
-      this.armTopic = new ROSLIB.Topic({
-        ros: this.ros,
-        name: '/arm_control',
-        messageType: 'web_connect/msg/Arm'
-      });
+  
+    if (!this.pumpTopic || !this.pumpTopicReady) {
+      console.warn('泵控制话题未就绪，重新初始化...');
+      this.initTopics();
+      if (!this.pumpTopic || !this.pumpTopicReady) {
+        console.error('泵控制话题初始化失败，无法发布消息');
+        return;
+      }
     }
-
+  
+    const rosMessage = new ROSLIB.Message(message);
+    this.pumpTopic.publish(rosMessage);
+    console.log('泵控制消息已发布:', message);
+  }
+  
+  
+  // 机械臂控制发布方法（同理修改）
+  publishArmControl(message: ArmControlMessage) {
+    if (!this.ros || !this.ros.isConnected) {
+      console.error('未连接到 ROS2，无法发布消息');
+      return;
+    }
+  
+    if (!this.armTopic || !this.armTopicReady) {
+      console.warn('机械臂控制话题未就绪，重新初始化...');
+      this.initTopics();
+      if (!this.armTopic || !this.armTopicReady) {
+        console.error('机械臂控制话题初始化失败，无法发布消息');
+        return;
+      }
+    }
+  
     const rosMessage = new ROSLIB.Message(message);
     this.armTopic.publish(rosMessage);
     console.log('机械臂控制消息已发布:', message);
