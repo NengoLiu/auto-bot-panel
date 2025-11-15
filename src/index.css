@@ -103,9 +103,13 @@ All colors MUST be HSL.
 @layer base {
   * {
     @apply border-border;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
     @apply bg-background text-foreground;
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
   }
 }
+

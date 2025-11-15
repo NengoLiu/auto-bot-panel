@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { ros2Connection } from "@/lib/ros2Connection";
 import { ConnectionBar } from "@/components/ConnectionBar";
-import  ManualControl  from "@/components/ManualControl";
+import { ManualControl } from "@/components/ManualControl";
 import { ChassisControl } from "@/components/ChassisControl";
 import { ArmControl } from "@/components/ArmControl";
 import { SemiAutoControl } from "@/components/SemiAutoControl";
@@ -70,26 +69,28 @@ const Manual = () => {
       description: `机械臂状态: ${newState ? "启用" : "禁用"}`
     });
   };
-  
+
   const handleModeChange = (mode: string) => {
-	if (!isConnected) {
-	  toast({
-		  title : "未连接",
-		  description : "请先连接ROS2服务器",
-		  variant : "destructive"
-	  });
-	  return
-	}
-	
-	setCurrentMode(mode);
-	
-	const mode_cmd = mode === "manual" ? 1 : 2;
-	ros2Connection.sendMachineModeRequest(mode_cmd);
-	
-	toast({
-	  title : "模式切换",
-	  description : mode === "manual" ? "已切换到手动模式" : "已切换到自动模式"
-	});
+    if (!isConnected) {
+      toast({
+        title: "未连接",
+        description: "请先连接到ROS2服务器",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setCurrentMode(mode);
+    
+    // 发送模式切换请求到ROS2
+    // mode_cmd: 0=准备状态/紧急暂停, 1=手动模式, 2=半自动
+    const mode_cmd = mode === "manual" ? 1 : 2;
+    ros2Connection.sendMachineModeRequest(mode_cmd);
+    
+    toast({
+      title: "模式切换",
+      description: mode === "manual" ? "已切换到手动模式" : "已切换到半自动模式"
+    });
   };
 
   return (
@@ -105,16 +106,26 @@ const Manual = () => {
       />
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto p-6">
-        <Tabs defaultValue="manual" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="manual">手动模式</TabsTrigger>
-            <TabsTrigger value="semiauto">半自动模式</TabsTrigger>
+      <div className="flex-1 overflow-auto p-4 md:p-6">
+        <Tabs value={currentMode} className="space-y-4 md:space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2 sticky top-0 z-10 bg-background">
+            <TabsTrigger 
+              value="manual"
+              onClick={() => handleModeChange("manual")}  // 强制绑定点击事件
+            >
+              手动模式
+            </TabsTrigger>
+            <TabsTrigger 
+              value="semiauto"
+              onClick={() => handleModeChange("semiauto")}  // 统一处理方式
+            >
+              半自动模式
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="manual" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-6">
+          <TabsContent value="manual" className="space-y-4 md:space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+              <div className="space-y-4 md:space-y-6">
                 <ManualControl
                   chassisEnabled={chassisEnabled}
                   armEnabled={armEnabled}

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ export const ArmControl = ({ isEnabled, isConnected }: ArmControlProps) => {
   const [rollAngle, setRollAngle] = useState([0]);
   const [updownAngle, setUpdownAngle] = useState([0]);
 
+  // 发送机械臂控制指令（复用逻辑保持不变）
   const sendArmControl = (yaw: number, roll: number, updown: number, reset: number = 0) => {
     if (!isConnected || !isEnabled) return;
 
@@ -29,39 +31,40 @@ export const ArmControl = ({ isEnabled, isConnected }: ArmControlProps) => {
     });
   };
 
+  // Yaw轴角度变化处理
   const handleYawChange = (value: number[]) => {
     setYawAngle(value);
     sendArmControl(value[0], rollAngle[0], updownAngle[0]);
   };
 
+  // Roll轴角度变化处理
   const handleRollChange = (value: number[]) => {
     setRollAngle(value);
     sendArmControl(yawAngle[0], value[0], updownAngle[0]);
   };
 
+  // 抬升高度变化处理
   const handleUpdownChange = (value: number[]) => {
     setUpdownAngle(value);
     sendArmControl(yawAngle[0], rollAngle[0], value[0]);
   };
 
+  // 修复后的复位逻辑：移除无效状态修改和延迟
   const handleReset = () => {
-	const prevEnabled = isEnabled;
-	isEnabled = false;
-	  
+    // 重置前端显示状态
     setYawAngle([0]);
     setRollAngle([0]);
     setUpdownAngle([0]);
-	
-	setTimeout(() => {
-	  sendArmControl(0, 0, 0, 1);
-	  isEnabled = prevEnabled;
-	  
-	toast({
-	  title: "机械臂复位",
-	  description: "机械臂已归位到初始位置",
-	});
-  },0);
-};
+
+    // 直接发送复位指令（使用原始isEnabled和isConnected状态）
+    sendArmControl(0, 0, 0, 1);
+
+    // 显示提示
+    toast({
+      title: "机械臂复位",
+      description: "机械臂已归位到初始位置",
+    });
+  };
 
   return (
     <Card>
@@ -75,7 +78,7 @@ export const ArmControl = ({ isEnabled, isConnected }: ArmControlProps) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Yaw Axis Control */}
+        {/* Yaw轴控制 */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <Label className="flex items-center gap-2">
@@ -99,7 +102,7 @@ export const ArmControl = ({ isEnabled, isConnected }: ArmControlProps) => {
           </div>
         </div>
 
-        {/* Roll Axis Control */}
+        {/* Roll轴控制 */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <Label className="flex items-center gap-2">
@@ -123,7 +126,7 @@ export const ArmControl = ({ isEnabled, isConnected }: ArmControlProps) => {
           </div>
         </div>
 
-        {/* Lift Control */}
+        {/* 抬升高度控制 */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <Label className="flex items-center gap-2">
@@ -146,7 +149,7 @@ export const ArmControl = ({ isEnabled, isConnected }: ArmControlProps) => {
           </div>
         </div>
 
-        {/* Reset Button */}
+        {/* 复位按钮 */}
         <Button
           onClick={handleReset}
           disabled={!isEnabled || !isConnected}
@@ -160,4 +163,3 @@ export const ArmControl = ({ isEnabled, isConnected }: ArmControlProps) => {
     </Card>
   );
 };
-
