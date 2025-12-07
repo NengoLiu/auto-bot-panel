@@ -102,7 +102,7 @@ export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) 
 
   const DirButton = ({ dir, icon: Icon, className }: { dir: string; icon: any; className?: string }) => (
     <div
-      className={`${btnBase} w-10 h-10 rounded-lg ${
+      className={`${btnBase} w-8 h-8 rounded-md ${
         activeDirection === dir ? activeClass : inactiveClass
       } ${!isEnabled ? disabledClass : ''} ${className}`}
       onMouseDown={(e) => isEnabled && handleDirectionPress(dir as any, e)}
@@ -112,13 +112,13 @@ export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) 
       onTouchEnd={handleRelease}
       onTouchCancel={handleRelease}
     >
-      <Icon className="w-6 h-6" />
+      <Icon className="w-5 h-5" />
     </div>
   );
 
   const RotButton = ({ dir, icon: Icon }: { dir: 'ccw' | 'cw'; icon: any }) => (
     <div
-      className={`${btnBase} w-12 h-12 rounded-lg ${
+      className={`${btnBase} w-9 h-9 rounded-md ${
         activeDirection === dir ? activeClass : inactiveClass
       } ${!isEnabled ? disabledClass : ''}`}
       onMouseDown={(e) => isEnabled && handleRotationPress(dir, e)}
@@ -128,57 +128,57 @@ export const ChassisControl = ({ isEnabled, isConnected }: ChassisControlProps) 
       onTouchEnd={handleRelease}
       onTouchCancel={handleRelease}
     >
-      <Icon className="w-6 h-6" />
+      <Icon className="w-5 h-5" />
     </div>
   );
 
   return (
-    <div className="h-full bg-card rounded-lg border p-2 flex flex-col">
+    <div className="h-full bg-card rounded-md border p-1.5 flex flex-col overflow-hidden">
       {/* 标题行 */}
-      <div className="flex items-center justify-between shrink-0 mb-2">
-        <span className="text-xs font-medium">底盘控制 (长按有效)</span>
-        <span className="text-xs text-muted-foreground">W/S/A/D</span>
+      <div className="flex items-center justify-between shrink-0 mb-1">
+        <span className="text-[10px] font-medium">底盘控制</span>
+        <span className="text-[9px] text-muted-foreground">W/S/A/D</span>
       </div>
 
-      {/* 控制区域 */}
-      <div className="flex-1 flex items-center justify-center gap-6">
-        {/* 方向盘 */}
-        <div className="relative w-32 h-32 rounded-full bg-muted flex items-center justify-center shrink-0">
-          <DirButton dir="forward" icon={ChevronUp} className="absolute top-1 left-1/2 -translate-x-1/2" />
-          <DirButton dir="left" icon={ChevronLeft} className="absolute left-1 top-1/2 -translate-y-1/2" />
-          <DirButton dir="right" icon={ChevronRight} className="absolute right-1 top-1/2 -translate-y-1/2" />
-          <DirButton dir="backward" icon={ChevronDown} className="absolute bottom-1 left-1/2 -translate-x-1/2" />
+      {/* 控制区域 - 使用flex-1填满 */}
+      <div className="flex-1 flex items-center justify-center gap-4 min-h-0">
+        {/* 方向盘 - 使用相对尺寸 */}
+        <div className="relative aspect-square h-[min(100%,7rem)] rounded-full bg-muted flex items-center justify-center shrink-0">
+          <DirButton dir="forward" icon={ChevronUp} className="absolute top-0.5 left-1/2 -translate-x-1/2" />
+          <DirButton dir="left" icon={ChevronLeft} className="absolute left-0.5 top-1/2 -translate-y-1/2" />
+          <DirButton dir="right" icon={ChevronRight} className="absolute right-0.5 top-1/2 -translate-y-1/2" />
+          <DirButton dir="backward" icon={ChevronDown} className="absolute bottom-0.5 left-1/2 -translate-x-1/2" />
         </div>
 
         {/* 旋转按钮 */}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5">
           <RotButton dir="ccw" icon={RotateCcw} />
           <RotButton dir="cw" icon={RotateCw} />
         </div>
 
         {/* 速度控制 */}
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-1">
           <Button
             variant="outline"
             size="icon"
             onClick={() => adjustSpeed(0.1)}
             disabled={!isEnabled}
-            className="h-10 w-10"
+            className="h-8 w-8"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
           </Button>
-          <div className="flex flex-col items-center justify-center w-16 h-14 bg-muted rounded-md">
-            <span className="text-[10px] text-muted-foreground">mm/s</span>
-            <span className="text-lg font-bold">{(speed * 1000).toFixed(0)}</span>
+          <div className="flex flex-col items-center justify-center w-12 h-10 bg-muted rounded-md">
+            <span className="text-[8px] text-muted-foreground">mm/s</span>
+            <span className="text-sm font-bold leading-tight">{(speed * 1000).toFixed(0)}</span>
           </div>
           <Button
             variant="outline"
             size="icon"
             onClick={() => adjustSpeed(-0.1)}
             disabled={!isEnabled}
-            className="h-10 w-10"
+            className="h-8 w-8"
           >
-            <Minus className="w-4 h-4" />
+            <Minus className="w-3.5 h-3.5" />
           </Button>
         </div>
       </div>

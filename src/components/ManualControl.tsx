@@ -74,12 +74,12 @@ export const ManualControl = ({
   };
 
   return (
-    <div className="h-full flex flex-col gap-2 bg-card rounded-lg border p-2">
-      {/* 设备使能 - 紧凑区块 */}
+    <div className="h-full flex flex-col gap-1 bg-card rounded-md border p-1.5 overflow-hidden">
+      {/* 设备使能 */}
       <div className="shrink-0">
-        <div className="flex items-center gap-1 mb-2">
-          <Power className="w-3 h-3 text-primary" />
-          <span className="text-xs font-medium">设备使能</span>
+        <div className="flex items-center gap-1 mb-1">
+          <Power className="w-2.5 h-2.5 text-primary" />
+          <span className="text-[10px] font-medium">设备使能</span>
         </div>
         <div className="grid grid-cols-2 gap-1">
           <Button
@@ -87,7 +87,7 @@ export const ManualControl = ({
             disabled={!isConnected}
             variant={chassisEnabled ? "default" : "outline"}
             size="sm"
-            className="h-7 text-xs"
+            className="h-6 text-[10px] px-1"
           >
             底盘{chassisEnabled ? "✓" : ""}
           </Button>
@@ -96,39 +96,39 @@ export const ManualControl = ({
             disabled={!isConnected}
             variant={armEnabled ? "default" : "outline"}
             size="sm"
-            className="h-7 text-xs"
+            className="h-6 text-[10px] px-1"
           >
-            机械臂{armEnabled ? "✓" : ""}
+            臂{armEnabled ? "✓" : ""}
           </Button>
         </div>
       </div>
 
       {/* 分隔线 */}
-      <div className="border-t" />
+      <div className="border-t shrink-0" />
 
       {/* 泵控制 */}
-      <div className="flex-1 flex flex-col min-h-0">
-        <div className="flex items-center justify-between mb-2">
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <div className="flex items-center justify-between mb-1 shrink-0">
           <div className="flex items-center gap-1">
-            <Droplets className="w-3 h-3 text-primary" />
-            <span className="text-xs font-medium">泵控制</span>
+            <Droplets className="w-2.5 h-2.5 text-primary" />
+            <span className="text-[10px] font-medium">泵控制</span>
           </div>
           <Button
             onClick={handlePumpToggle}
             disabled={!isConnected}
             variant={pumpOn ? "default" : "outline"}
             size="sm"
-            className="h-6 text-xs px-2"
+            className="h-5 text-[9px] px-1.5"
           >
             {pumpOn ? "ON" : "OFF"}
           </Button>
         </div>
 
-        <div className="flex-1 flex flex-col gap-3 min-h-0">
-          <div className="space-y-1">
+        <div className="flex-1 flex flex-col gap-1.5 min-h-0 overflow-hidden">
+          <div className="space-y-0.5">
             <div className="flex justify-between items-center">
-              <Label className="text-xs">泵速</Label>
-              <span className="text-xs font-mono">{pumpSpeed[0]} ml/s</span>
+              <Label className="text-[9px]">泵速</Label>
+              <span className="text-[9px] font-mono">{pumpSpeed[0]}</span>
             </div>
             <Slider
               value={pumpSpeed}
@@ -137,14 +137,14 @@ export const ManualControl = ({
               min={0}
               step={1}
               disabled={!pumpOn}
-              className="h-4"
+              className="h-3"
             />
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             <div className="flex justify-between items-center">
-              <Label className="text-xs">流量</Label>
-              <span className="text-xs font-mono">{pumpFlud[0]} ml</span>
+              <Label className="text-[9px]">流量</Label>
+              <span className="text-[9px] font-mono">{pumpFlud[0]}</span>
             </div>
             <Slider
               value={pumpFlud}
@@ -153,7 +153,7 @@ export const ManualControl = ({
               min={0}
               step={0.1}
               disabled={!pumpOn}
-              className="h-4"
+              className="h-3"
             />
           </div>
         </div>
