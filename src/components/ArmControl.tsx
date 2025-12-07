@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { ros2Connection } from "@/lib/ros2Connection";
-import { CircleDot, RotateCw, MoveVertical, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 
 interface ArmControlProps {
   isEnabled: boolean;
@@ -57,25 +56,29 @@ export const ArmControl = ({ isEnabled, isConnected }: ArmControlProps) => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CircleDot className="w-5 h-5" />
-          机械臂控制
-        </CardTitle>
-        <CardDescription>
-          {isEnabled ? "调整 Yaw、Roll 轴角度和抬升高度" : "请先启用机械臂"}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Yaw Axis Control */}
-        <div className="space-y-2">
+    <div className="h-full bg-card rounded-lg border p-2 flex flex-col">
+      {/* 标题 */}
+      <div className="flex items-center justify-between shrink-0 mb-2">
+        <span className="text-xs font-medium">机械臂控制</span>
+        <Button
+          onClick={handleReset}
+          disabled={!isEnabled || !isConnected}
+          variant="outline"
+          size="sm"
+          className="h-6 text-xs px-2"
+        >
+          <RotateCcw className="w-3 h-3 mr-1" />
+          复位
+        </Button>
+      </div>
+
+      {/* 滑块控制 */}
+      <div className="flex-1 flex flex-col gap-3 min-h-0">
+        {/* Yaw */}
+        <div className="space-y-1">
           <div className="flex justify-between items-center">
-            <Label className="flex items-center gap-2">
-              <RotateCcw className="w-4 h-4" />
-              Yaw 轴角度 (°)
-            </Label>
-            <span className="text-sm font-medium">{yawAngle[0]}°</span>
+            <Label className="text-xs">Yaw轴</Label>
+            <span className="text-xs font-mono w-10 text-right">{yawAngle[0]}°</span>
           </div>
           <Slider
             value={yawAngle}
@@ -84,22 +87,19 @@ export const ArmControl = ({ isEnabled, isConnected }: ArmControlProps) => {
             min={-90}
             step={1}
             disabled={!isEnabled}
+            className="h-4"
           />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>-90° (左)</span>
-            <span>0°</span>
-            <span>90° (右)</span>
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>-90°</span>
+            <span>90°</span>
           </div>
         </div>
 
-        {/* Roll Axis Control */}
-        <div className="space-y-2">
+        {/* Roll */}
+        <div className="space-y-1">
           <div className="flex justify-between items-center">
-            <Label className="flex items-center gap-2">
-              <RotateCw className="w-4 h-4" />
-              Roll 轴角度 (°)
-            </Label>
-            <span className="text-sm font-medium">{rollAngle[0]}°</span>
+            <Label className="text-xs">Roll轴</Label>
+            <span className="text-xs font-mono w-10 text-right">{rollAngle[0]}°</span>
           </div>
           <Slider
             value={rollAngle}
@@ -108,22 +108,19 @@ export const ArmControl = ({ isEnabled, isConnected }: ArmControlProps) => {
             min={-180}
             step={1}
             disabled={!isEnabled}
+            className="h-4"
           />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>-180° (左)</span>
-            <span>0°</span>
-            <span>180° (右)</span>
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>-180°</span>
+            <span>180°</span>
           </div>
         </div>
 
-        {/* Lift Control */}
-        <div className="space-y-2">
+        {/* 抬升 */}
+        <div className="space-y-1">
           <div className="flex justify-between items-center">
-            <Label className="flex items-center gap-2">
-              <MoveVertical className="w-4 h-4" />
-              抬升高度 (cm)
-            </Label>
-            <span className="text-sm font-medium">{updownAngle[0].toFixed(1)} cm</span>
+            <Label className="text-xs">抬升</Label>
+            <span className="text-xs font-mono w-12 text-right">{updownAngle[0].toFixed(1)}cm</span>
           </div>
           <Slider
             value={updownAngle}
@@ -132,24 +129,14 @@ export const ArmControl = ({ isEnabled, isConnected }: ArmControlProps) => {
             min={0}
             step={0.1}
             disabled={!isEnabled}
+            className="h-4"
           />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>0 cm (最低)</span>
-            <span>8 cm (最高)</span>
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>0cm</span>
+            <span>8cm</span>
           </div>
         </div>
-
-        {/* Reset Button */}
-        <Button
-          onClick={handleReset}
-          disabled={!isEnabled || !isConnected}
-          className="w-full"
-          variant="outline"
-          size="lg"
-        >
-          机械臂复位
-        </Button>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
