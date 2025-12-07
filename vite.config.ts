@@ -20,10 +20,10 @@ export default defineConfig(({ mode }) => ({
         name: 'ROS2 机器人控制系统',
         short_name: '机器人控制',
         description: '专业的ROS2机器人控制界面，支持底盘、机械臂和泵控制',
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
-        display: 'standalone',
-        orientation: 'portrait',
+        theme_color: '#1a1a2e',
+        background_color: '#1a1a2e',
+        display: 'fullscreen',
+        orientation: 'landscape',
         icons: [
           {
             src: 'icon-192.png',

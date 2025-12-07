@@ -19,9 +19,9 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <SidebarProvider>
-            <div className="min-h-screen flex w-full">
+            <div className="h-screen flex w-full landscape-only safe-area-padding overflow-hidden">
               <AppSidebar />
-              <main className="flex-1">
+              <main className="flex-1 overflow-auto">
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/manual" element={<Manual />} />
