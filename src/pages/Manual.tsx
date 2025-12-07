@@ -11,7 +11,7 @@ import { SemiAutoControl } from "@/components/SemiAutoControl";
 const Manual = () => {
   const { toast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
-  const [rosUrl, setRosUrl] = useState("ws://192.168.137.96:9090");
+  const [rosUrl, setRosUrl] = useState("wss://192.168.137.96:9090");
   const [isConnecting, setIsConnecting] = useState(false);
   const [chassisEnabled, setChassisEnabled] = useState(false);
   const [armEnabled, setArmEnabled] = useState(false);
