@@ -15,46 +15,43 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon-192.png', 'icon-512.png'],
+      injectRegister: 'auto',
+      includeAssets: ['favicon.ico', 'icon-192.png', 'icon-512.png'],
       manifest: {
+        id: '/ros2-control',
         name: 'ROS2 机器人控制系统',
         short_name: '机器人控制',
-        description: '专业的ROS2机器人控制界面，支持底盘、机械臂和泵控制',
+        description: '专业的ROS2机器人控制界面',
         theme_color: '#1a1a2e',
         background_color: '#1a1a2e',
         display: 'fullscreen',
         orientation: 'landscape',
+        start_url: '/',
+        scope: '/',
+        categories: ['utilities', 'productivity'],
         icons: [
           {
             src: 'icon-192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: 'icon-512.png',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any maskable'
           }
         ]
       },
+      devOptions: {
+        enabled: true
+      },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          }
-        ]
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true
       }
     })
   ].filter(Boolean),
