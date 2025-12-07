@@ -1,3 +1,4 @@
+// 通用的消息提示工具，为用户操作提供即时反馈
 import * as React from "react";
 
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast";

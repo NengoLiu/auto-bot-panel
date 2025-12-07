@@ -1,12 +1,14 @@
+// 作为 ROS2 服务器交互的核心钩子，封装了连接管理和指令发送逻辑
 import { useState, useCallback, useEffect } from 'react';
 import { ros2Connection } from '@/lib/ros2Connection';
 import { useToast } from '@/hooks/use-toast';
-// 导入接口类型（与ros2Connection.ts保持一致）
+import { useRosStore } from 'src/components/rosStore';
+// 导入接口类型
 import {
-  EnableRequest,
   PumpMessage,
   ChassisControlMessage,
   ArmControlMessage,
+  EnableRequest,
   SemiModeRequest,
   StopRequest,
   MachineModeRequest
@@ -14,19 +16,30 @@ import {
 
 export const useROS2 = () => {
   // 核心状态管理
-  const [isConnected, setIsConnected] = useState(false);
-  const [rosUrl, setRosUrl] = useState('ws://192.168.137.96:9090');
-  const [isConnecting, setIsConnecting] = useState(false);
+  
+  const {
+	isConnected,
+	isConnecting,
+	rosUrl,
+	setIsConnected,
+	setIsConnecting,
+    setRosUrl,
+  } = useRosStore();
+  
+  // const [isConnected, setIsConnected] = useState(false);
+  // const [rosUrl, setRosUrl] = useState('ws://192.168.137.96:9090');
+  // const [isConnecting, setIsConnecting] = useState(false);
   const { toast } = useToast();
 
-  // 监听底层连接状态变化（如意外断开）
+  // 监听底层连接状态变化（非主动断开）
   useEffect(() => {
     const handleClose = () => {
       if (isConnected) {
+		// 若意外断开，更新状态为false
         setIsConnected(false);
         toast({
-          title: "连接已断开",
-          description: "与ROS2服务器的连接被关闭",
+          title: "连接意外断开",
+          description: "与ROS2服务器的连接被意外断开",
           variant: "destructive",
         });
       }

@@ -1,5 +1,7 @@
+// 是 roslibjs 库（ROS 官方推荐的 JavaScript/TypeScript 客户端库）暴露的全局命名空间（namespace)
 import ROSLIB from 'roslib';
 
+// 先定义接口，明确请求参数的v类型契约
 export interface ConnectionEstablishRequest {
   establish: number; // 0: 关机, 1: 开机
 }
@@ -129,7 +131,7 @@ export class ROS2Connection {
     }
   }
   
-  // 新增：代理 ros 的事件移除
+  // 代理 ros 的事件移除
   off(eventName: string, callback: (...args: any[]) => void) {
     if (this.ros) {
       this.ros.off(eventName, callback);
@@ -209,7 +211,7 @@ export class ROS2Connection {
     const request = new ROSLIB.ServiceRequest({ establish });
     service.callService(request, 
       (result: ConnectionEstablishResponse) => {
-        console.log('连接建立响应:', result.establish_ack);
+		console.log('连接建立响应:', result.establish_ack)
       },
       (error) => {
         console.error('连接建立请求失败:', error);
@@ -289,7 +291,7 @@ export class ROS2Connection {
   }
   
   
-  // 泵控制发布方法（同理修改）
+  // 泵控制发布
   publishPumpControl(message: PumpMessage) {
     if (!this.ros || !this.ros.isConnected) {
       console.error('未连接到 ROS2，无法发布消息');
@@ -311,7 +313,7 @@ export class ROS2Connection {
   }
   
   
-  // 机械臂控制发布方法（同理修改）
+  // 机械臂控制发布
   publishArmControl(message: ArmControlMessage) {
     if (!this.ros || !this.ros.isConnected) {
       console.error('未连接到 ROS2，无法发布消息');

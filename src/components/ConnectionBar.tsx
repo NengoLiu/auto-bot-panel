@@ -33,7 +33,7 @@ export const ConnectionBar = ({
           onChange={(e) => onUrlChange(e.target.value)}
           disabled={isConnected}
           className="max-w-md"
-          placeholder="ws://192.168.137.96:9090"
+          placeholder="ws://192.168.137.116:9090"
         />
       </div>
       
