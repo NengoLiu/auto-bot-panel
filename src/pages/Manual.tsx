@@ -81,9 +81,6 @@ const Manual = () => {
     }
 
     setCurrentMode(mode);
-    
-    // 发送模式切换请求到ROS2
-    // mode_cmd: 0=准备状态/紧急暂停, 1=手动模式, 2=半自动
     const mode_cmd = mode === "manual" ? 1 : 2;
     ros2Connection.sendMachineModeRequest(mode_cmd);
     
@@ -94,8 +91,8 @@ const Manual = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* Connection Bar */}
+    <div className="flex flex-col h-full">
+      {/* Connection Bar - 紧凑版 */}
       <ConnectionBar
         isConnected={isConnected}
         rosUrl={rosUrl}
@@ -105,17 +102,18 @@ const Manual = () => {
         isConnecting={isConnecting}
       />
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto p-4 md:p-6">
-        <Tabs value={currentMode} onValueChange={handleModeChange} className="space-y-4 md:space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2 sticky top-0 z-10 bg-background">
-            <TabsTrigger value="manual">手动模式</TabsTrigger>
-            <TabsTrigger value="semiauto">半自动模式</TabsTrigger>
+      {/* Main Content - 无滚动 */}
+      <div className="flex-1 p-2 overflow-hidden">
+        <Tabs value={currentMode} onValueChange={handleModeChange} className="h-full flex flex-col">
+          <TabsList className="grid w-48 grid-cols-2 h-8 shrink-0">
+            <TabsTrigger value="manual" className="text-xs h-7">手动模式</TabsTrigger>
+            <TabsTrigger value="semiauto" className="text-xs h-7">半自动</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="manual" className="space-y-4 md:space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-              <div className="space-y-4 md:space-y-6">
+          <TabsContent value="manual" className="flex-1 mt-2 overflow-hidden">
+            <div className="grid grid-cols-4 gap-2 h-full">
+              {/* 左侧: 使能 + 泵控制 */}
+              <div className="col-span-1 h-full">
                 <ManualControl
                   chassisEnabled={chassisEnabled}
                   armEnabled={armEnabled}
@@ -123,12 +121,18 @@ const Manual = () => {
                   onChassisToggle={handleChassisToggle}
                   onArmToggle={handleArmToggle}
                 />
+              </div>
+              
+              {/* 中间: 底盘控制 */}
+              <div className="col-span-2 h-full">
                 <ChassisControl
                   isEnabled={chassisEnabled}
                   isConnected={isConnected}
                 />
               </div>
-              <div>
+              
+              {/* 右侧: 机械臂控制 */}
+              <div className="col-span-1 h-full">
                 <ArmControl
                   isEnabled={armEnabled}
                   isConnected={isConnected}
@@ -137,10 +141,8 @@ const Manual = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="semiauto" className="space-y-6">
-            <div className="flex justify-center">
-              <SemiAutoControl isConnected={isConnected} />
-            </div>
+          <TabsContent value="semiauto" className="flex-1 mt-2 overflow-hidden">
+            <SemiAutoControl isConnected={isConnected} />
           </TabsContent>
         </Tabs>
       </div>
