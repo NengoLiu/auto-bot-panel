@@ -91,8 +91,8 @@ const Manual = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Connection Bar - 紧凑版 */}
+    <div className="flex flex-col h-[100dvh] max-h-[100dvh] overflow-hidden">
+      {/* Connection Bar - 超紧凑 */}
       <ConnectionBar
         isConnected={isConnected}
         rosUrl={rosUrl}
@@ -102,46 +102,40 @@ const Manual = () => {
         isConnecting={isConnecting}
       />
 
-      {/* Main Content - 无滚动 */}
-      <div className="flex-1 p-2 overflow-hidden">
+      {/* Main Content - 自适应填满剩余空间 */}
+      <div className="flex-1 min-h-0 p-1.5 overflow-hidden">
         <Tabs value={currentMode} onValueChange={handleModeChange} className="h-full flex flex-col">
-          <TabsList className="grid w-48 grid-cols-2 h-8 shrink-0">
-            <TabsTrigger value="manual" className="text-xs h-7">手动模式</TabsTrigger>
-            <TabsTrigger value="semiauto" className="text-xs h-7">半自动</TabsTrigger>
+          <TabsList className="grid w-40 grid-cols-2 h-7 shrink-0">
+            <TabsTrigger value="manual" className="text-[11px] h-6">手动</TabsTrigger>
+            <TabsTrigger value="semiauto" className="text-[11px] h-6">半自动</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="manual" className="flex-1 mt-2 overflow-hidden">
-            <div className="grid grid-cols-4 gap-2 h-full">
+          <TabsContent value="manual" className="flex-1 min-h-0 mt-1.5 overflow-hidden">
+            <div className="grid grid-cols-[1fr_2fr_1fr] gap-1.5 h-full">
               {/* 左侧: 使能 + 泵控制 */}
-              <div className="col-span-1 h-full">
-                <ManualControl
-                  chassisEnabled={chassisEnabled}
-                  armEnabled={armEnabled}
-                  isConnected={isConnected}
-                  onChassisToggle={handleChassisToggle}
-                  onArmToggle={handleArmToggle}
-                />
-              </div>
+              <ManualControl
+                chassisEnabled={chassisEnabled}
+                armEnabled={armEnabled}
+                isConnected={isConnected}
+                onChassisToggle={handleChassisToggle}
+                onArmToggle={handleArmToggle}
+              />
               
               {/* 中间: 底盘控制 */}
-              <div className="col-span-2 h-full">
-                <ChassisControl
-                  isEnabled={chassisEnabled}
-                  isConnected={isConnected}
-                />
-              </div>
+              <ChassisControl
+                isEnabled={chassisEnabled}
+                isConnected={isConnected}
+              />
               
               {/* 右侧: 机械臂控制 */}
-              <div className="col-span-1 h-full">
-                <ArmControl
-                  isEnabled={armEnabled}
-                  isConnected={isConnected}
-                />
-              </div>
+              <ArmControl
+                isEnabled={armEnabled}
+                isConnected={isConnected}
+              />
             </div>
           </TabsContent>
 
-          <TabsContent value="semiauto" className="flex-1 mt-2 overflow-hidden">
+          <TabsContent value="semiauto" className="flex-1 min-h-0 mt-1.5 overflow-hidden">
             <SemiAutoControl isConnected={isConnected} />
           </TabsContent>
         </Tabs>
