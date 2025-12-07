@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -74,61 +75,70 @@ export const ManualControl = ({
   };
 
   return (
-    <div className="h-full flex flex-col gap-1 bg-card rounded-md border p-1.5 overflow-hidden">
-      {/* 设备使能 */}
-      <div className="shrink-0">
-        <div className="flex items-center gap-1 mb-1">
-          <Power className="w-2.5 h-2.5 text-primary" />
-          <span className="text-[10px] font-medium">设备使能</span>
-        </div>
-        <div className="grid grid-cols-2 gap-1">
-          <Button
-            onClick={onChassisToggle}
-            disabled={!isConnected}
-            variant={chassisEnabled ? "default" : "outline"}
-            size="sm"
-            className="h-6 text-[10px] px-1"
-          >
-            底盘{chassisEnabled ? "✓" : ""}
-          </Button>
-          <Button
-            onClick={onArmToggle}
-            disabled={!isConnected}
-            variant={armEnabled ? "default" : "outline"}
-            size="sm"
-            className="h-6 text-[10px] px-1"
-          >
-            臂{armEnabled ? "✓" : ""}
-          </Button>
-        </div>
-      </div>
-
-      {/* 分隔线 */}
-      <div className="border-t shrink-0" />
-
-      {/* 泵控制 */}
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <div className="flex items-center justify-between mb-1 shrink-0">
-          <div className="flex items-center gap-1">
-            <Droplets className="w-2.5 h-2.5 text-primary" />
-            <span className="text-[10px] font-medium">泵控制</span>
+    <div className="space-y-6">
+      {/* Enable Controls */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Power className="w-5 h-5" />
+            设备使能
+          </CardTitle>
+          <CardDescription>启用或禁用底盘和机械臂</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label>底盘使能</Label>
+            <Button
+              onClick={onChassisToggle}
+              disabled={!isConnected}
+              variant={chassisEnabled ? "default" : "outline"}
+              size="sm"
+            >
+              {chassisEnabled ? "已启用" : "已禁用"}
+            </Button>
           </div>
-          <Button
-            onClick={handlePumpToggle}
-            disabled={!isConnected}
-            variant={pumpOn ? "default" : "outline"}
-            size="sm"
-            className="h-5 text-[9px] px-1.5"
-          >
-            {pumpOn ? "ON" : "OFF"}
-          </Button>
-        </div>
+          <div className="flex items-center justify-between">
+            <Label>机械臂使能</Label>
+            <Button
+              onClick={onArmToggle}
+              disabled={!isConnected}
+              variant={armEnabled ? "default" : "outline"}
+              size="sm"
+            >
+              {armEnabled ? "已启用" : "已禁用"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-        <div className="flex-1 flex flex-col gap-1.5 min-h-0 overflow-hidden">
-          <div className="space-y-0.5">
+      {/* Pump Control */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Droplets className="w-5 h-5" />
+            泵控制
+          </CardTitle>
+          <CardDescription>
+            {pumpOn ? "调整泵速和流量" : "请先启动泵"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <Label>泵开关</Label>
+            <Button
+              onClick={handlePumpToggle}
+              disabled={!isConnected}
+              variant={pumpOn ? "default" : "outline"}
+              size="sm"
+            >
+              {pumpOn ? "运行中" : "已停止"}
+            </Button>
+          </div>
+
+          <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <Label className="text-[9px]">泵速</Label>
-              <span className="text-[9px] font-mono">{pumpSpeed[0]}</span>
+              <Label>泵速 (ml/s)</Label>
+              <span className="text-sm font-medium">{pumpSpeed[0]} ml/s</span>
             </div>
             <Slider
               value={pumpSpeed}
@@ -137,14 +147,13 @@ export const ManualControl = ({
               min={0}
               step={1}
               disabled={!pumpOn}
-              className="h-3"
             />
           </div>
 
-          <div className="space-y-0.5">
+          <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <Label className="text-[9px]">流量</Label>
-              <span className="text-[9px] font-mono">{pumpFlud[0]}</span>
+              <Label>泵流量 (ml)</Label>
+              <span className="text-sm font-medium">{pumpFlud[0]} ml</span>
             </div>
             <Slider
               value={pumpFlud}
@@ -153,11 +162,10 @@ export const ManualControl = ({
               min={0}
               step={0.1}
               disabled={!pumpOn}
-              className="h-3"
             />
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

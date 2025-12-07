@@ -11,7 +11,7 @@ import { SemiAutoControl } from "@/components/SemiAutoControl";
 const Manual = () => {
   const { toast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
-  const [rosUrl, setRosUrl] = useState("wss://192.168.137.96:9090");
+  const [rosUrl, setRosUrl] = useState("ws://192.168.137.96:9090");
   const [isConnecting, setIsConnecting] = useState(false);
   const [chassisEnabled, setChassisEnabled] = useState(false);
   const [armEnabled, setArmEnabled] = useState(false);
@@ -81,6 +81,9 @@ const Manual = () => {
     }
 
     setCurrentMode(mode);
+    
+    // 发送模式切换请求到ROS2
+    // mode_cmd: 0=准备状态/紧急暂停, 1=手动模式, 2=半自动
     const mode_cmd = mode === "manual" ? 1 : 2;
     ros2Connection.sendMachineModeRequest(mode_cmd);
     
@@ -91,8 +94,8 @@ const Manual = () => {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] max-h-[100dvh] overflow-hidden">
-      {/* Connection Bar - 超紧凑 */}
+    <div className="flex flex-col h-screen">
+      {/* Connection Bar */}
       <ConnectionBar
         isConnected={isConnected}
         rosUrl={rosUrl}
@@ -102,41 +105,42 @@ const Manual = () => {
         isConnecting={isConnecting}
       />
 
-      {/* Main Content - 自适应填满剩余空间 */}
-      <div className="flex-1 min-h-0 p-1.5 overflow-hidden">
-        <Tabs value={currentMode} onValueChange={handleModeChange} className="h-full flex flex-col">
-          <TabsList className="grid w-40 grid-cols-2 h-7 shrink-0">
-            <TabsTrigger value="manual" className="text-[11px] h-6">手动</TabsTrigger>
-            <TabsTrigger value="semiauto" className="text-[11px] h-6">半自动</TabsTrigger>
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto p-4 md:p-6">
+        <Tabs value={currentMode} onValueChange={handleModeChange} className="space-y-4 md:space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2 sticky top-0 z-10 bg-background">
+            <TabsTrigger value="manual">手动模式</TabsTrigger>
+            <TabsTrigger value="semiauto">半自动模式</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="manual" className="flex-1 min-h-0 mt-1.5 overflow-hidden">
-            <div className="grid grid-cols-[1fr_2fr_1fr] gap-1.5 h-full">
-              {/* 左侧: 使能 + 泵控制 */}
-              <ManualControl
-                chassisEnabled={chassisEnabled}
-                armEnabled={armEnabled}
-                isConnected={isConnected}
-                onChassisToggle={handleChassisToggle}
-                onArmToggle={handleArmToggle}
-              />
-              
-              {/* 中间: 底盘控制 */}
-              <ChassisControl
-                isEnabled={chassisEnabled}
-                isConnected={isConnected}
-              />
-              
-              {/* 右侧: 机械臂控制 */}
-              <ArmControl
-                isEnabled={armEnabled}
-                isConnected={isConnected}
-              />
+          <TabsContent value="manual" className="space-y-4 md:space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+              <div className="space-y-4 md:space-y-6">
+                <ManualControl
+                  chassisEnabled={chassisEnabled}
+                  armEnabled={armEnabled}
+                  isConnected={isConnected}
+                  onChassisToggle={handleChassisToggle}
+                  onArmToggle={handleArmToggle}
+                />
+                <ChassisControl
+                  isEnabled={chassisEnabled}
+                  isConnected={isConnected}
+                />
+              </div>
+              <div>
+                <ArmControl
+                  isEnabled={armEnabled}
+                  isConnected={isConnected}
+                />
+              </div>
             </div>
           </TabsContent>
 
-          <TabsContent value="semiauto" className="flex-1 min-h-0 mt-1.5 overflow-hidden">
-            <SemiAutoControl isConnected={isConnected} />
+          <TabsContent value="semiauto" className="space-y-6">
+            <div className="flex justify-center">
+              <SemiAutoControl isConnected={isConnected} />
+            </div>
           </TabsContent>
         </Tabs>
       </div>

@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Wifi, WifiOff } from "lucide-react";
 
 interface ConnectionBarProps {
@@ -20,28 +21,31 @@ export const ConnectionBar = ({
   isConnecting,
 }: ConnectionBarProps) => {
   return (
-    <div className="h-8 bg-card border-b border-border px-2 flex items-center gap-1.5 shrink-0">
-      <div className="flex items-center gap-1.5 flex-1 min-w-0">
-        <span className="text-[10px] text-muted-foreground shrink-0">ROS2:</span>
+    <div className="h-16 bg-card border-b border-border px-6 flex items-center gap-4">
+      <div className="flex items-center gap-2 flex-1">
+        <Label htmlFor="ros-url" className="whitespace-nowrap text-sm font-medium">
+          ROS2 WebSocket URL:
+        </Label>
         <Input
+          id="ros-url"
           type="text"
           value={rosUrl}
           onChange={(e) => onUrlChange(e.target.value)}
           disabled={isConnected}
-          className="h-6 text-[11px] max-w-[180px] px-1.5"
-          placeholder="wss://192.168.137.96:9090"
+          className="max-w-md"
+          placeholder="ws://192.168.137.96:9090"
         />
       </div>
       
-      <div className="flex items-center gap-1.5 shrink-0">
-        <div className="flex items-center gap-0.5">
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {isConnected ? (
-            <Wifi className="w-3.5 h-3.5 text-green-500" />
+            <Wifi className="w-5 h-5 text-success" />
           ) : (
-            <WifiOff className="w-3.5 h-3.5 text-muted-foreground" />
+            <WifiOff className="w-5 h-5 text-muted-foreground" />
           )}
-          <span className={`text-[10px] ${isConnected ? 'text-green-500' : 'text-muted-foreground'}`}>
-            {isConnected ? '已连' : '断开'}
+          <span className={`text-sm font-medium ${isConnected ? 'text-success' : 'text-muted-foreground'}`}>
+            {isConnected ? '已连接' : '未连接'}
           </span>
         </div>
         
@@ -50,18 +54,16 @@ export const ConnectionBar = ({
             onClick={onDisconnect} 
             variant="destructive"
             size="sm"
-            className="h-6 text-[10px] px-1.5"
           >
-            断开
+            断开连接
           </Button>
         ) : (
           <Button 
             onClick={onConnect} 
             disabled={isConnecting}
             size="sm"
-            className="h-6 text-[10px] px-1.5"
           >
-            {isConnecting ? '...' : '连接'}
+            {isConnecting ? '连接中...' : '建立连接'}
           </Button>
         )}
       </div>
