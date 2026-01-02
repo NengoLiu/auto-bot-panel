@@ -30,7 +30,10 @@ export const FluidInject = ({ isConnected }: FluidInjectProps) => {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Droplets className="w-4 h-4 text-primary" />
-          <span className="font-display text-xs tracking-wider text-destructive">FLUID INJECT</span>
+          <div>
+            <span className="text-xs font-semibold text-destructive">泵控</span>
+            <span className="text-[10px] text-muted-foreground ml-2">PUMP</span>
+          </div>
         </div>
         <Switch
           checked={isActive}

@@ -127,7 +127,10 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
       {/* Header */}
       <div className="flex items-center gap-2">
         <div className="w-1 h-4 bg-primary rounded-full" />
-        <span className="font-display text-xs tracking-wider text-muted-foreground">KINETIC_NAV_MATRIX</span>
+        <div>
+          <span className="text-xs font-semibold text-muted-foreground">底盘导航</span>
+          <span className="text-[10px] text-muted-foreground ml-2">NAV</span>
+        </div>
       </div>
 
       {/* Direction Pad */}
@@ -152,7 +155,8 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
       {/* Speed Control */}
       <div className="cyber-border rounded-lg p-3">
         <div className="text-center mb-2">
-          <span className="text-xs text-muted-foreground font-display tracking-wider">KINETIC_SPEED_SETPOINT (MM/S)</span>
+          <span className="text-xs font-semibold text-muted-foreground">运动速度</span>
+          <span className="text-[10px] text-muted-foreground ml-2">MM/S</span>
         </div>
         <div className="flex items-center justify-between gap-4">
           <Button

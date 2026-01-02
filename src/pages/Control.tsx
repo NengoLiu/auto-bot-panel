@@ -65,11 +65,17 @@ const Control = () => {
         <Tabs value={currentMode || ""} onValueChange={handleModeChange} className="space-y-4">
           <div className="flex justify-center">
             <TabsList className="bg-secondary/30 border border-border/50">
-              <TabsTrigger value="manual" className={`font-display text-xs tracking-wider data-[state=active]:bg-primary data-[state=active]:text-primary-foreground ${!currentMode ? 'opacity-70' : ''}`}>
-                MANUAL_DRIVE
+              <TabsTrigger value="manual" className={`font-display tracking-wider data-[state=active]:bg-primary data-[state=active]:text-primary-foreground ${!currentMode ? 'opacity-70' : ''}`}>
+                <div className="flex flex-col items-center py-1">
+                  <span className="text-sm font-semibold">手动模式</span>
+                  <span className="text-[10px] opacity-70">MANUAL</span>
+                </div>
               </TabsTrigger>
-              <TabsTrigger value="semiauto" className={`font-display text-xs tracking-wider data-[state=active]:bg-accent data-[state=active]:text-accent-foreground ${!currentMode ? 'opacity-70' : ''}`}>
-                AUTO_PROC_SEMI
+              <TabsTrigger value="semiauto" className={`font-display tracking-wider data-[state=active]:bg-accent data-[state=active]:text-accent-foreground ${!currentMode ? 'opacity-70' : ''}`}>
+                <div className="flex flex-col items-center py-1">
+                  <span className="text-sm font-semibold">半自动模式</span>
+                  <span className="text-[10px] opacity-70">SEMI-AUTO</span>
+                </div>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -78,8 +84,8 @@ const Control = () => {
           {!isModeActive && (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
               <div className="text-muted-foreground text-center space-y-2">
-                <p className="text-lg font-display tracking-wider">请选择操作模式</p>
-                <p className="text-sm opacity-70">点击上方按钮进入手动模式或半自动模式</p>
+                <p className="text-lg font-semibold">请选择操作模式</p>
+                <p className="text-xs opacity-70">SELECT MODE</p>
               </div>
               <div className="grid grid-cols-2 gap-8 mt-8 opacity-30 blur-sm pointer-events-none">
                 <div className="bg-card/50 border border-border/30 rounded-lg p-8 h-40" />

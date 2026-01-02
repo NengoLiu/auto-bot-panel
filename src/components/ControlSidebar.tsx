@@ -20,13 +20,13 @@ interface ControlSidebarProps {
 }
 
 const menuItems = [
-  { icon: User, label: "管理员", path: "/admin" },
-  { icon: AlertTriangle, label: "故障管理", path: "/faults" },
-  { icon: Map, label: "路径规划", path: "/path" },
-  { icon: Zap, label: "全自动施工", path: "/auto" },
-  { icon: Gamepad2, label: "手动/半自动施工", path: "/control", active: true },
-  { icon: Monitor, label: "遥控界面", path: "/remote" },
-  { icon: Bot, label: "AI 助手", path: "/ai" },
+  { icon: User, label: "管理员", labelEn: "Admin", path: "/admin" },
+  { icon: AlertTriangle, label: "故障管理", labelEn: "Faults", path: "/faults" },
+  { icon: Map, label: "路径规划", labelEn: "Path", path: "/path" },
+  { icon: Zap, label: "全自动", labelEn: "Auto", path: "/auto" },
+  { icon: Gamepad2, label: "手动/半自动", labelEn: "Control", path: "/control", active: true },
+  { icon: Monitor, label: "遥控", labelEn: "Remote", path: "/remote" },
+  { icon: Bot, label: "AI助手", labelEn: "AI", path: "/ai" },
 ];
 
 export const ControlSidebar = ({ isOpen, onClose }: ControlSidebarProps) => {
@@ -64,7 +64,10 @@ export const ControlSidebar = ({ isOpen, onClose }: ControlSidebarProps) => {
       <div className="fixed left-0 top-0 h-full w-64 bg-sidebar border-r border-sidebar-border z-50 flex flex-col">
         {/* Header */}
         <div className="h-14 flex items-center justify-between px-4 border-b border-sidebar-border">
-          <span className="font-display text-accent text-sm tracking-wider">MENU</span>
+          <div>
+            <span className="text-accent text-sm font-semibold">菜单</span>
+            <span className="text-[10px] text-muted-foreground ml-2">MENU</span>
+          </div>
           <Button
             variant="ghost"
             size="icon"
@@ -75,7 +78,6 @@ export const ControlSidebar = ({ isOpen, onClose }: ControlSidebarProps) => {
           </Button>
         </div>
 
-        {/* Menu Items */}
         <nav className="flex-1 py-4 px-3 space-y-1">
           {menuItems.map((item) => (
             <button
@@ -88,7 +90,10 @@ export const ControlSidebar = ({ isOpen, onClose }: ControlSidebarProps) => {
               }`}
             >
               <item.icon className="w-4 h-4" />
-              <span>{item.label}</span>
+              <div className="flex flex-col items-start">
+                <span className="font-medium">{item.label}</span>
+                <span className="text-[10px] opacity-60">{item.labelEn}</span>
+              </div>
             </button>
           ))}
         </nav>
@@ -101,7 +106,10 @@ export const ControlSidebar = ({ isOpen, onClose }: ControlSidebarProps) => {
             className="w-full border-destructive/50 text-destructive hover:bg-destructive/10"
           >
             <LogOut className="w-4 h-4 mr-2" />
-            断开连接
+            <div>
+              <span>断开连接</span>
+              <span className="text-[10px] opacity-70 ml-2">EXIT</span>
+            </div>
           </Button>
         </div>
       </div>

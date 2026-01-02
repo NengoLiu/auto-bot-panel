@@ -23,7 +23,10 @@ export const PowerMatrix = ({
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <span className="text-primary text-sm">⚡</span>
-        <span className="font-display text-xs tracking-wider text-destructive">POWER MATRIX</span>
+        <div>
+          <span className="text-xs font-semibold text-destructive">电源矩阵</span>
+          <span className="text-[10px] text-muted-foreground ml-2">POWER</span>
+        </div>
       </div>
 
       {/* Toggle Buttons */}
@@ -38,9 +41,12 @@ export const PowerMatrix = ({
           } disabled:opacity-30`}
         >
           <Move className="w-5 h-5 mx-auto mb-2" />
-          <span className="text-xs font-display tracking-wider">
-            {chassisEnabled ? 'DRIVE ON' : 'DRIVE OFF'}
-          </span>
+          <div className="text-center">
+            <span className="text-xs font-semibold block">
+              {chassisEnabled ? '底盘启用' : '底盘关闭'}
+            </span>
+            <span className="text-[10px] opacity-70">{chassisEnabled ? 'ON' : 'OFF'}</span>
+          </div>
         </button>
 
         <button
@@ -53,9 +59,12 @@ export const PowerMatrix = ({
           } disabled:opacity-30`}
         >
           <ArrowLeftRight className="w-5 h-5 mx-auto mb-2" />
-          <span className="text-xs font-display tracking-wider">
-            {armEnabled ? 'ARM ON' : 'ARM_IDLE'}
-          </span>
+          <div className="text-center">
+            <span className="text-xs font-semibold block">
+              {armEnabled ? '机械臂启用' : '机械臂关闭'}
+            </span>
+            <span className="text-[10px] opacity-70">{armEnabled ? 'ON' : 'OFF'}</span>
+          </div>
         </button>
       </div>
     </div>

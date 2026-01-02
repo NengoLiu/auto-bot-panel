@@ -73,7 +73,10 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
         <div className="cyber-card p-4">
           <div className="flex items-center gap-2 mb-4">
             <Zap className="w-4 h-4 text-accent" />
-            <span className="font-display text-xs tracking-wider text-accent">PROC_METHOD</span>
+            <div>
+              <span className="text-xs font-semibold text-accent">施工方式</span>
+              <span className="text-[10px] text-muted-foreground ml-2">METHOD</span>
+            </div>
           </div>
           <div className="space-y-3">
             <button
@@ -85,7 +88,10 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
                   : "bg-secondary/30 border-border/50 text-muted-foreground hover:bg-secondary/50"
               } disabled:opacity-50`}
             >
-              <span className="text-sm">刮涂 / Blade Coating</span>
+              <div>
+                <span className="text-sm font-semibold">刮涂</span>
+                <span className="text-[10px] opacity-70 ml-2">BLADE</span>
+              </div>
             </button>
             <button
               onClick={() => setBladeRoller("roller")}
@@ -96,7 +102,10 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
                   : "bg-secondary/30 border-border/50 text-muted-foreground hover:bg-secondary/50"
               } disabled:opacity-50`}
             >
-              <span className="text-sm">辊涂 / Roller Coating</span>
+              <div>
+                <span className="text-sm font-semibold">辊涂</span>
+                <span className="text-[10px] opacity-70 ml-2">ROLLER</span>
+              </div>
             </button>
           </div>
         </div>
@@ -105,14 +114,20 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
         <div className="cyber-card p-4">
           <div className="flex items-center gap-2 mb-4">
             <Layers className="w-4 h-4 text-muted-foreground" />
-            <span className="font-display text-xs tracking-wider text-muted-foreground">PROCESS_GEOMETRY_X_Y_Z</span>
+            <div>
+              <span className="text-xs font-semibold text-muted-foreground">施工尺寸</span>
+              <span className="text-[10px] text-muted-foreground ml-2">SIZE</span>
+            </div>
           </div>
           
           <div className="grid grid-cols-3 gap-4">
             {/* Length */}
             <div className="space-y-2">
               <div className="flex items-baseline gap-2">
-                <span className="text-xs text-muted-foreground">LENGTH (M)</span>
+                <div>
+                  <span className="text-xs font-semibold">长度</span>
+                  <span className="text-[10px] text-muted-foreground ml-1">M</span>
+                </div>
                 <span className="text-2xl font-bold text-primary ml-auto">{length}</span>
               </div>
               <Slider
@@ -129,7 +144,10 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
             {/* Width */}
             <div className="space-y-2">
               <div className="flex items-baseline gap-2">
-                <span className="text-xs text-muted-foreground">WIDTH (M)</span>
+                <div>
+                  <span className="text-xs font-semibold">宽度</span>
+                  <span className="text-[10px] text-muted-foreground ml-1">M</span>
+                </div>
                 <span className="text-2xl font-bold text-foreground ml-auto">{width}</span>
               </div>
               <Slider
@@ -147,7 +165,10 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
             <div className="space-y-2">
               <div className="flex items-baseline gap-2">
                 <Layers className="w-3 h-3 text-accent" />
-                <span className="text-xs text-muted-foreground">THICK (MM)</span>
+                <div>
+                  <span className="text-xs font-semibold">厚度</span>
+                  <span className="text-[10px] text-muted-foreground ml-1">MM</span>
+                </div>
                 <span className="text-2xl font-bold text-accent ml-auto">{thickness}</span>
               </div>
               <Slider
@@ -174,7 +195,10 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
               className="w-48 h-48 rounded-2xl bg-gradient-to-br from-primary to-primary/60 hover:from-primary/90 hover:to-primary/50 transition-all flex flex-col items-center justify-center gap-2 shadow-lg shadow-primary/30 disabled:opacity-30"
             >
               <Play className="w-16 h-16 text-primary-foreground" />
-              <span className="font-display text-xl text-primary-foreground tracking-wider">INIT_START</span>
+              <div className="text-center">
+                <span className="text-xl font-semibold text-primary-foreground block">开始施工</span>
+                <span className="text-xs text-primary-foreground/70">START</span>
+              </div>
             </button>
           ) : !isStopped ? (
             <div className="flex gap-4">
@@ -184,7 +208,10 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
                 size="lg"
                 className="px-8"
               >
-                紧急停止
+                <div className="text-center">
+                  <span className="block">紧急停止</span>
+                  <span className="text-[10px] opacity-70">E-STOP</span>
+                </div>
               </Button>
               <Button
                 onClick={() => handleStop(2)}
@@ -192,7 +219,10 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
                 size="lg"
                 className="px-8"
               >
-                更换配件
+                <div className="text-center">
+                  <span className="block">更换配件</span>
+                  <span className="text-[10px] opacity-70">SWAP</span>
+                </div>
               </Button>
             </div>
           ) : (
@@ -201,17 +231,20 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
               className="w-48 h-48 rounded-2xl bg-gradient-to-br from-primary to-primary/60 hover:from-primary/90 hover:to-primary/50 transition-all flex flex-col items-center justify-center gap-2 shadow-lg shadow-primary/30"
             >
               <Play className="w-16 h-16 text-primary-foreground" />
-              <span className="font-display text-xl text-primary-foreground tracking-wider">CONTINUE</span>
+              <div className="text-center">
+                <span className="text-xl font-semibold text-primary-foreground block">继续施工</span>
+                <span className="text-xs text-primary-foreground/70">RESUME</span>
+              </div>
             </button>
           )}
 
           {/* Status Info */}
           <div className="mt-6 flex items-center gap-2 px-4 py-2 rounded-full border border-border/50 bg-secondary/30">
             <Info className="w-4 h-4 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground font-display tracking-wider">
+            <span className="text-xs text-muted-foreground">
               {isConfigured 
-                ? "TELEMETRY_STATUS: ACTIVE" 
-                : "CONSTRUCT SEQUENCE PARAMETERS BEFORE INITIATING START COMMAND."}
+                ? "运行中 ACTIVE" 
+                : "请先配置参数 SET PARAMS"}
             </span>
           </div>
         </div>

@@ -20,11 +20,11 @@ export const ControlHeader = ({ onMenuClick, isConnected }: ControlHeaderProps) 
           <Menu className="w-5 h-5" />
         </Button>
         <div>
-          <h1 className="font-display text-sm font-semibold tracking-wider">SINGULARITY_HUB</h1>
+          <h1 className="text-sm font-semibold">智驭中枢</h1>
           <div className="flex items-center gap-1.5">
             <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-primary' : 'bg-destructive'}`} />
-            <span className="text-xs text-muted-foreground">
-              {isConnected ? 'LINK_SECURE' : 'DISCONNECTED'}
+            <span className="text-[10px] text-muted-foreground">
+              {isConnected ? '已连接 ONLINE' : '未连接 OFFLINE'}
             </span>
           </div>
         </div>
