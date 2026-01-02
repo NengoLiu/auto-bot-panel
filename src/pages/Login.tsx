@@ -9,20 +9,21 @@ import { Network, Lock, ArrowRight, Loader2 } from "lucide-react";
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [rosUrl, setRosUrl] = useState("ws://192.168.137.96:9090");
+  const [ipAddress, setIpAddress] = useState("192.168.137.96");
   const [password, setPassword] = useState("");
   const [isConnecting, setIsConnecting] = useState(false);
 
   const handleConnect = async () => {
-    if (!rosUrl) {
+    if (!ipAddress) {
       toast({
         title: "错误",
-        description: "请输入WebSocket URL",
+        description: "请输入IP地址",
         variant: "destructive"
       });
       return;
     }
 
+    const rosUrl = `ws://${ipAddress}:9090`;
     setIsConnecting(true);
     try {
       await ros2Connection.connect(rosUrl);
@@ -86,33 +87,17 @@ const Login = () => {
             <p className="text-muted-foreground text-sm">请输入凭证以访问控制核心</p>
           </div>
 
-          {/* ROS URL Input */}
+          {/* IP Input */}
           <div className="relative">
             <Network className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
               type="text"
               placeholder="192.168.4.1"
-              value={rosUrl}
-              onChange={(e) => setRosUrl(e.target.value)}
+              value={ipAddress}
+              onChange={(e) => setIpAddress(e.target.value)}
               className="pl-12 h-14 bg-secondary/50 border-border/50 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary"
             />
-          </div>
-
-          {/* Password Input */}
-          <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
-              type="password"
-              placeholder="访问密钥"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="pl-12 h-14 bg-secondary/50 border-border/50 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary"
-            />
-          </div>
-
-          {/* Forgot password link */}
-          <div className="text-right">
-            <button className="text-sm text-accent hover:underline">忘记密钥?</button>
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">IP地址</span>
           </div>
 
           {/* Connect Button */}
