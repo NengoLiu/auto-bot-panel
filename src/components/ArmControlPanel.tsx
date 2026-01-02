@@ -62,7 +62,10 @@ export const ArmControlPanel = ({ isEnabled, isConnected }: ArmControlPanelProps
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-1 h-4 bg-accent rounded-full" />
-          <span className="font-display text-xs tracking-wider text-muted-foreground">MANIPULATOR_CONTROL</span>
+          <div>
+            <span className="text-xs font-semibold text-muted-foreground">机械臂控制</span>
+            <span className="text-[10px] text-muted-foreground ml-2">ARM</span>
+          </div>
         </div>
         <Button
           variant="ghost"
@@ -72,7 +75,7 @@ export const ArmControlPanel = ({ isEnabled, isConnected }: ArmControlPanelProps
           className="text-xs"
         >
           <RotateCcw className="w-3 h-3 mr-1" />
-          RESET
+          复位 <span className="text-[10px] opacity-70 ml-1">RST</span>
         </Button>
       </div>
 
@@ -86,7 +89,10 @@ export const ArmControlPanel = ({ isEnabled, isConnected }: ArmControlPanelProps
         {/* Yaw */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <span className="text-[10px] text-muted-foreground font-display">YAW ANGLE</span>
+            <div>
+              <span className="text-[10px] font-semibold text-muted-foreground">偏航角</span>
+              <span className="text-[8px] text-muted-foreground ml-1">YAW</span>
+            </div>
             <span className="text-xs font-medium text-primary">{yaw}°</span>
           </div>
           <Slider
@@ -107,7 +113,10 @@ export const ArmControlPanel = ({ isEnabled, isConnected }: ArmControlPanelProps
         {/* Roll */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <span className="text-[10px] text-muted-foreground font-display">ROLL ANGLE</span>
+            <div>
+              <span className="text-[10px] font-semibold text-muted-foreground">横滚角</span>
+              <span className="text-[8px] text-muted-foreground ml-1">ROLL</span>
+            </div>
             <span className="text-xs font-medium text-primary">{roll}°</span>
           </div>
           <Slider
@@ -128,7 +137,10 @@ export const ArmControlPanel = ({ isEnabled, isConnected }: ArmControlPanelProps
         {/* Updown */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <span className="text-[10px] text-muted-foreground font-display">VERTICAL_LIFT</span>
+            <div>
+              <span className="text-[10px] font-semibold text-muted-foreground">升降</span>
+              <span className="text-[8px] text-muted-foreground ml-1">LIFT</span>
+            </div>
             <span className="text-xs font-medium text-primary">{updown}°</span>
           </div>
           <Slider
