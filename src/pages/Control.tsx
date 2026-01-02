@@ -18,7 +18,7 @@ const Control = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [chassisEnabled, setChassisEnabled] = useState(false);
   const [armEnabled, setArmEnabled] = useState(false);
-  const [currentMode, setCurrentMode] = useState<string>("manual");
+  const [currentMode, setCurrentMode] = useState<string | null>(null);
 
   useEffect(() => {
     const connected = sessionStorage.getItem("ros2_connected");
@@ -51,7 +51,10 @@ const Control = () => {
     setCurrentMode(mode);
     const mode_cmd = mode === "manual" ? 1 : 2;
     ros2Connection.sendMachineModeRequest(mode_cmd);
+    toast({ title: mode === "manual" ? "已进入手动模式" : "已进入半自动模式" });
   };
+
+  const isModeActive = currentMode !== null;
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -59,17 +62,33 @@ const Control = () => {
       <ControlSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex-1 overflow-auto p-4">
-        <Tabs value={currentMode} onValueChange={handleModeChange} className="space-y-4">
+        <Tabs value={currentMode || ""} onValueChange={handleModeChange} className="space-y-4">
           <div className="flex justify-center">
             <TabsList className="bg-secondary/30 border border-border/50">
-              <TabsTrigger value="manual" className="font-display text-xs tracking-wider data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="manual" className={`font-display text-xs tracking-wider data-[state=active]:bg-primary data-[state=active]:text-primary-foreground ${!currentMode ? 'opacity-70' : ''}`}>
                 MANUAL_DRIVE
               </TabsTrigger>
-              <TabsTrigger value="semiauto" className="font-display text-xs tracking-wider data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
+              <TabsTrigger value="semiauto" className={`font-display text-xs tracking-wider data-[state=active]:bg-accent data-[state=active]:text-accent-foreground ${!currentMode ? 'opacity-70' : ''}`}>
                 AUTO_PROC_SEMI
               </TabsTrigger>
             </TabsList>
           </div>
+
+          {/* 未选择模式时显示提示 */}
+          {!isModeActive && (
+            <div className="flex flex-col items-center justify-center py-20 space-y-4">
+              <div className="text-muted-foreground text-center space-y-2">
+                <p className="text-lg font-display tracking-wider">请选择操作模式</p>
+                <p className="text-sm opacity-70">点击上方按钮进入手动模式或半自动模式</p>
+              </div>
+              <div className="grid grid-cols-2 gap-8 mt-8 opacity-30 blur-sm pointer-events-none">
+                <div className="bg-card/50 border border-border/30 rounded-lg p-8 h-40" />
+                <div className="bg-card/50 border border-border/30 rounded-lg p-8 h-40" />
+                <div className="bg-card/50 border border-border/30 rounded-lg p-8 h-40" />
+                <div className="bg-card/50 border border-border/30 rounded-lg p-8 h-40" />
+              </div>
+            </div>
+          )}
 
           <TabsContent value="manual" className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
