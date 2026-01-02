@@ -46,10 +46,10 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
       if (!isEnabled || !isConnected) return;
       const speedValue = speed / 1000;
       switch (e.key.toLowerCase()) {
-        case 'w': handleDirectionPress('forward', 1, 0); break;
-        case 's': handleDirectionPress('backward', -1, 0); break;
-        case 'a': handleDirectionPress('left', 0, 1); break;
-        case 'd': handleDirectionPress('right', 0, -1); break;
+        case 'w': handleDirectionPress('forward', 0, 1); break;
+        case 's': handleDirectionPress('backward', 0, -1); break;
+        case 'a': handleDirectionPress('left', -1, 0); break;
+        case 'd': handleDirectionPress('right', 1, 0); break;
       }
     };
     const handleKeyUp = () => handleRelease();
@@ -135,15 +135,15 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
 
       {/* Direction Pad */}
       <div className="flex flex-col items-center gap-2 py-4">
-        <DirectionButton direction="forward" icon={ChevronUp} x={1} y={0} />
+        <DirectionButton direction="forward" icon={ChevronUp} x={0} y={1} />
         <div className="flex items-center gap-2">
-          <DirectionButton direction="left" icon={ChevronLeft} x={0} y={1} />
+          <DirectionButton direction="left" icon={ChevronLeft} x={-1} y={0} />
           <div className="w-14 h-14 rounded-lg bg-secondary/30 border border-border/30 flex items-center justify-center">
             <div className="w-2 h-2 rounded-full bg-muted-foreground/50" />
           </div>
-          <DirectionButton direction="right" icon={ChevronRight} x={0} y={-1} />
+          <DirectionButton direction="right" icon={ChevronRight} x={1} y={0} />
         </div>
-        <DirectionButton direction="backward" icon={ChevronDown} x={-1} y={0} />
+        <DirectionButton direction="backward" icon={ChevronDown} x={0} y={-1} />
         
         {/* Rotation buttons on sides */}
         <div className="flex items-center justify-between w-full mt-2 px-4">
