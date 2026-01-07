@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { Play, Info, Zap, Layers } from "lucide-react";
+import { Play, Info, Zap, Layers, Minus, Plus, ArrowLeft, ArrowRight } from "lucide-react";
 import { ros2Connection } from "@/lib/ros2Connection";
 import { toast } from "sonner";
 
@@ -11,12 +10,26 @@ interface SemiAutoControlPanelProps {
 
 export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps) => {
   const [bladeRoller, setBladeRoller] = useState<"blade" | "roller">("blade");
+  const [direction, setDirection] = useState<"left" | "right">("left");
   const [length, setLength] = useState(10);
   const [width, setWidth] = useState(1.6);
   const [thickness, setThickness] = useState(5);
   const [isConfigured, setIsConfigured] = useState(false);
   const [isStopped, setIsStopped] = useState(false);
   const [lastConfig, setLastConfig] = useState<any>(null);
+
+  const adjustValue = (
+    setter: React.Dispatch<React.SetStateAction<number>>,
+    delta: number,
+    min: number,
+    max: number,
+    step: number
+  ) => {
+    setter((prev) => {
+      const newVal = Math.round((prev + delta) * 100) / 100;
+      return Math.min(Math.max(newVal, min), max);
+    });
+  };
 
   const handleSubmit = () => {
     if (!isConnected) {
@@ -26,7 +39,7 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
 
     const config = {
       blade_roller: bladeRoller === "blade" ? 0 : 1,
-      direction: 0,
+      direction: direction === "left" ? 0 : 1,
       width: width * 1000,
       length: length * 1000,
       thickness,
@@ -65,6 +78,55 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
     toast.success("继续施工");
     setIsStopped(false);
   };
+
+  const NumberInput = ({
+    label,
+    labelEn,
+    value,
+    unit,
+    onIncrease,
+    onDecrease,
+    disabled,
+  }: {
+    label: string;
+    labelEn: string;
+    value: number;
+    unit: string;
+    onIncrease: () => void;
+    onDecrease: () => void;
+    disabled: boolean;
+  }) => (
+    <div className="space-y-2">
+      <div className="flex items-baseline gap-2">
+        <div>
+          <span className="text-xs font-semibold">{label}</span>
+          <span className="text-[10px] text-muted-foreground ml-1">{unit}</span>
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onDecrease}
+          disabled={disabled}
+          className="h-10 w-10 rounded-full border border-border/50"
+        >
+          <Minus className="w-4 h-4" />
+        </Button>
+        <span className="text-2xl font-bold text-primary min-w-[60px] text-center">{value}</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onIncrease}
+          disabled={disabled}
+          className="h-10 w-10 rounded-full border border-border/50"
+        >
+          <Plus className="w-4 h-4" />
+        </Button>
+      </div>
+      <div className="text-[10px] text-muted-foreground text-center">{labelEn}</div>
+    </div>
+  );
 
   return (
     <div className="space-y-6 p-6">
@@ -108,6 +170,48 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
               </div>
             </button>
           </div>
+
+          {/* Direction Selection */}
+          <div className="mt-4 pt-4 border-t border-border/50">
+            <div className="flex items-center gap-2 mb-3">
+              <div>
+                <span className="text-xs font-semibold text-muted-foreground">施工方向</span>
+                <span className="text-[10px] text-muted-foreground ml-2">DIR</span>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDirection("left")}
+                disabled={isConfigured}
+                className={`flex-1 py-3 px-4 rounded-lg border transition-all flex items-center justify-center gap-2 ${
+                  direction === "left"
+                    ? "bg-primary/20 border-primary text-primary"
+                    : "bg-secondary/30 border-border/50 text-muted-foreground hover:bg-secondary/50"
+                } disabled:opacity-50`}
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <div>
+                  <span className="text-sm font-semibold">向左</span>
+                  <span className="text-[10px] opacity-70 ml-1">L</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setDirection("right")}
+                disabled={isConfigured}
+                className={`flex-1 py-3 px-4 rounded-lg border transition-all flex items-center justify-center gap-2 ${
+                  direction === "right"
+                    ? "bg-primary/20 border-primary text-primary"
+                    : "bg-secondary/30 border-border/50 text-muted-foreground hover:bg-secondary/50"
+                } disabled:opacity-50`}
+              >
+                <div>
+                  <span className="text-sm font-semibold">向右</span>
+                  <span className="text-[10px] opacity-70 ml-1">R</span>
+                </div>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Process Geometry */}
@@ -121,66 +225,33 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
           </div>
           
           <div className="grid grid-cols-3 gap-4">
-            {/* Length */}
-            <div className="space-y-2">
-              <div className="flex items-baseline gap-2">
-                <div>
-                  <span className="text-xs font-semibold">长度</span>
-                  <span className="text-[10px] text-muted-foreground ml-1">M</span>
-                </div>
-                <span className="text-2xl font-bold text-primary ml-auto">{length}</span>
-              </div>
-              <Slider
-                value={[length]}
-                onValueChange={([v]) => setLength(v)}
-                min={1}
-                max={20}
-                step={0.5}
-                disabled={isConfigured}
-                className="w-full"
-              />
-            </div>
-
-            {/* Width */}
-            <div className="space-y-2">
-              <div className="flex items-baseline gap-2">
-                <div>
-                  <span className="text-xs font-semibold">宽度</span>
-                  <span className="text-[10px] text-muted-foreground ml-1">M</span>
-                </div>
-                <span className="text-2xl font-bold text-foreground ml-auto">{width}</span>
-              </div>
-              <Slider
-                value={[width]}
-                onValueChange={([v]) => setWidth(v)}
-                min={0.5}
-                max={2.6}
-                step={0.1}
-                disabled={isConfigured}
-                className="w-full"
-              />
-            </div>
-
-            {/* Thickness */}
-            <div className="space-y-2">
-              <div className="flex items-baseline gap-2">
-                <Layers className="w-3 h-3 text-accent" />
-                <div>
-                  <span className="text-xs font-semibold">厚度</span>
-                  <span className="text-[10px] text-muted-foreground ml-1">MM</span>
-                </div>
-                <span className="text-2xl font-bold text-accent ml-auto">{thickness}</span>
-              </div>
-              <Slider
-                value={[thickness]}
-                onValueChange={([v]) => setThickness(v)}
-                min={1}
-                max={20}
-                step={0.5}
-                disabled={isConfigured}
-                className="w-full"
-              />
-            </div>
+            <NumberInput
+              label="长度"
+              labelEn="LENGTH"
+              value={length}
+              unit="M"
+              onIncrease={() => adjustValue(setLength, 0.5, 1, 20, 0.5)}
+              onDecrease={() => adjustValue(setLength, -0.5, 1, 20, 0.5)}
+              disabled={isConfigured}
+            />
+            <NumberInput
+              label="宽度"
+              labelEn="WIDTH"
+              value={width}
+              unit="M"
+              onIncrease={() => adjustValue(setWidth, 0.1, 0.5, 2.6, 0.1)}
+              onDecrease={() => adjustValue(setWidth, -0.1, 0.5, 2.6, 0.1)}
+              disabled={isConfigured}
+            />
+            <NumberInput
+              label="厚度"
+              labelEn="THICK"
+              value={thickness}
+              unit="MM"
+              onIncrease={() => adjustValue(setThickness, 0.5, 1, 20, 0.5)}
+              onDecrease={() => adjustValue(setThickness, -0.5, 1, 20, 0.5)}
+              disabled={isConfigured}
+            />
           </div>
         </div>
       </div>

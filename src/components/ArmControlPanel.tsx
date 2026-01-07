@@ -86,7 +86,7 @@ export const ArmControlPanel = ({ isEnabled, isConnected }: ArmControlPanelProps
 
       {/* Control Sliders */}
       <div className="grid grid-cols-3 gap-4">
-        {/* Yaw */}
+        {/* Yaw: ±90° */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <div>
@@ -98,6 +98,30 @@ export const ArmControlPanel = ({ isEnabled, isConnected }: ArmControlPanelProps
           <Slider
             value={[yaw]}
             onValueChange={handleYawChange}
+            min={-90}
+            max={90}
+            step={1}
+            disabled={isDisabled}
+            className="w-full"
+          />
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>-90°</span>
+            <span>90°</span>
+          </div>
+        </div>
+
+        {/* Roll: ±180° */}
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-[10px] font-semibold text-muted-foreground">横滚角</span>
+              <span className="text-[8px] text-muted-foreground ml-1">ROLL</span>
+            </div>
+            <span className="text-xs font-medium text-primary">{roll}°</span>
+          </div>
+          <Slider
+            value={[roll]}
+            onValueChange={handleRollChange}
             min={-180}
             max={180}
             step={1}
@@ -110,51 +134,27 @@ export const ArmControlPanel = ({ isEnabled, isConnected }: ArmControlPanelProps
           </div>
         </div>
 
-        {/* Roll */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <div>
-              <span className="text-[10px] font-semibold text-muted-foreground">横滚角</span>
-              <span className="text-[8px] text-muted-foreground ml-1">ROLL</span>
-            </div>
-            <span className="text-xs font-medium text-primary">{roll}°</span>
-          </div>
-          <Slider
-            value={[roll]}
-            onValueChange={handleRollChange}
-            min={-90}
-            max={90}
-            step={1}
-            disabled={isDisabled}
-            className="w-full"
-          />
-          <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>-90°</span>
-            <span>90°</span>
-          </div>
-        </div>
-
-        {/* Updown */}
+        {/* Updown: 0-8cm */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <div>
               <span className="text-[10px] font-semibold text-muted-foreground">升降</span>
               <span className="text-[8px] text-muted-foreground ml-1">LIFT</span>
             </div>
-            <span className="text-xs font-medium text-primary">{updown}°</span>
+            <span className="text-xs font-medium text-primary">{updown}cm</span>
           </div>
           <Slider
             value={[updown]}
             onValueChange={handleUpdownChange}
-            min={-90}
-            max={90}
-            step={1}
+            min={0}
+            max={8}
+            step={0.1}
             disabled={isDisabled}
             className="w-full"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>-90°</span>
-            <span>90°</span>
+            <span>0cm</span>
+            <span>8cm</span>
           </div>
         </div>
       </div>
