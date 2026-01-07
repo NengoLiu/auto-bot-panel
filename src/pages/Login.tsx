@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,9 +9,19 @@ import { Network, Lock, ArrowRight, Loader2 } from "lucide-react";
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [ipAddress, setIpAddress] = useState("192.168.137.96");
+  const [ipAddress, setIpAddress] = useState("");
   const [password, setPassword] = useState("");
   const [isConnecting, setIsConnecting] = useState(false);
+
+  // Load saved IP from localStorage on mount
+  useEffect(() => {
+    const savedIp = localStorage.getItem("ros2_last_ip");
+    if (savedIp) {
+      setIpAddress(savedIp);
+    } else {
+      setIpAddress("192.168.137.96");
+    }
+  }, []);
 
   const handleConnect = async () => {
     if (!ipAddress) {
@@ -23,18 +33,34 @@ const Login = () => {
       return;
     }
 
+    if (!password) {
+      toast({
+        title: "错误",
+        description: "请输入密码",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const rosUrl = `ws://${ipAddress}:9090`;
     setIsConnecting(true);
     try {
       await ros2Connection.connect(rosUrl);
       ros2Connection.sendConnectionEstablishRequest(1);
+      
+      // Save IP and connection info to localStorage for persistence
+      localStorage.setItem("ros2_last_ip", ipAddress);
+      localStorage.setItem("ros2_connected", "true");
+      localStorage.setItem("ros2_url", rosUrl);
+      
+      // Also set sessionStorage for current session
+      sessionStorage.setItem("ros2_connected", "true");
+      sessionStorage.setItem("ros2_url", rosUrl);
+      
       toast({
         title: "连接成功",
         description: "已连接到 ROS2 服务器"
       });
-      // Store connection info
-      sessionStorage.setItem("ros2_connected", "true");
-      sessionStorage.setItem("ros2_url", rosUrl);
       navigate("/control");
     } catch (error: any) {
       toast({
@@ -98,6 +124,19 @@ const Login = () => {
               className="pl-12 h-14 bg-secondary/50 border-border/50 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary"
             />
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">IP地址</span>
+          </div>
+
+          {/* Password Input */}
+          <div className="relative">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              type="password"
+              placeholder="请输入密码"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="pl-12 h-14 bg-secondary/50 border-border/50 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary"
+            />
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">密码</span>
           </div>
 
           {/* Connect Button */}

@@ -32,10 +32,12 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
     sendControl(0, 0, zDirection * zSpeed);
   };
 
-  const handleRelease = () => {
+  const handleRelease = useCallback(() => {
     setActiveDirection(null);
-    sendControl(0, 0, 0);
-  };
+    if (isEnabled && isConnected) {
+      sendControl(0, 0, 0);
+    }
+  }, [isEnabled, isConnected, sendControl]);
 
   const adjustSpeed = (delta: number) => {
     setSpeed((prev) => Math.min(Math.max(prev + delta, 100), 2000));
@@ -77,13 +79,14 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
     className?: string;
   }) => (
     <button
-      onMouseDown={() => handleDirectionPress(direction, x, y)}
-      onMouseUp={handleRelease}
-      onMouseLeave={handleRelease}
-      onTouchStart={() => handleDirectionPress(direction, x, y)}
-      onTouchEnd={handleRelease}
+      onMouseDown={(e) => { e.preventDefault(); handleDirectionPress(direction, x, y); }}
+      onMouseUp={(e) => { e.preventDefault(); handleRelease(); }}
+      onMouseLeave={(e) => { e.preventDefault(); handleRelease(); }}
+      onTouchStart={(e) => { e.preventDefault(); handleDirectionPress(direction, x, y); }}
+      onTouchEnd={(e) => { e.preventDefault(); handleRelease(); }}
+      onTouchCancel={(e) => { e.preventDefault(); handleRelease(); }}
       disabled={isDisabled}
-      className={`w-14 h-14 rounded-lg flex items-center justify-center transition-all ${
+      className={`w-14 h-14 rounded-lg flex items-center justify-center transition-all touch-none select-none ${
         activeDirection === direction 
           ? 'bg-primary/30 border-primary text-primary' 
           : 'bg-secondary/50 border-border/50 text-foreground hover:bg-secondary'
@@ -105,13 +108,14 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
     zDirection: number;
   }) => (
     <button
-      onMouseDown={() => handleRotationPress(direction, zDirection)}
-      onMouseUp={handleRelease}
-      onMouseLeave={handleRelease}
-      onTouchStart={() => handleRotationPress(direction, zDirection)}
-      onTouchEnd={handleRelease}
+      onMouseDown={(e) => { e.preventDefault(); handleRotationPress(direction, zDirection); }}
+      onMouseUp={(e) => { e.preventDefault(); handleRelease(); }}
+      onMouseLeave={(e) => { e.preventDefault(); handleRelease(); }}
+      onTouchStart={(e) => { e.preventDefault(); handleRotationPress(direction, zDirection); }}
+      onTouchEnd={(e) => { e.preventDefault(); handleRelease(); }}
+      onTouchCancel={(e) => { e.preventDefault(); handleRelease(); }}
       disabled={isDisabled}
-      className={`w-12 h-12 rounded-full flex flex-col items-center justify-center transition-all ${
+      className={`w-12 h-12 rounded-full flex flex-col items-center justify-center transition-all touch-none select-none ${
         activeDirection === direction 
           ? 'bg-primary/30 border-primary text-primary' 
           : 'bg-secondary/50 border-border/50 text-foreground hover:bg-secondary'
