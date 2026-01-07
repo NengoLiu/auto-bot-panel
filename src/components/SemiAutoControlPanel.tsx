@@ -40,8 +40,8 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
     const config = {
       blade_roller: bladeRoller === "blade" ? 0 : 1,
       direction: direction === "left" ? 0 : 1,
-      width: width * 1000,
-      length: length * 1000,
+      width,
+      length,
       thickness,
     };
 
