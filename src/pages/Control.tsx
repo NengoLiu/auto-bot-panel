@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { ros2Connection } from "@/lib/ros2Connection";
-import { lockToLandscape } from "@/lib/screenOrientation";
+import { lockToLandscape, setImmersiveStatusBar } from "@/lib/screenOrientation";
 import { ControlHeader } from "@/components/ControlHeader";
 import { ControlSidebar } from "@/components/ControlSidebar";
 import { PowerMatrix } from "@/components/PowerMatrix";
@@ -29,8 +29,9 @@ const Control = () => {
     }
     setIsConnected(ros2Connection.isConnected());
     
-    // 进入控制页面时锁定为横屏
+    // 进入控制页面时锁定为横屏 + 沉浸式状态栏
     lockToLandscape();
+    setImmersiveStatusBar();
   }, [navigate]);
 
   const handleChassisToggle = () => {

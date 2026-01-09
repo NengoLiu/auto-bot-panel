@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ros2Connection } from "@/lib/ros2Connection";
-import { lockToPortrait } from "@/lib/screenOrientation";
+import { lockToPortrait, setImmersiveStatusBar } from "@/lib/screenOrientation";
 import { useToast } from "@/hooks/use-toast";
 import { Network, Lock, ArrowRight, Loader2 } from "lucide-react";
 
@@ -17,6 +17,7 @@ const Login = () => {
   // Load saved IP from localStorage on mount and lock to portrait
   useEffect(() => {
     lockToPortrait();
+    setImmersiveStatusBar(); // 设置沉浸式状态栏
     
     const savedIp = localStorage.getItem("ros2_last_ip");
     if (savedIp) {
