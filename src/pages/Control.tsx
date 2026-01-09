@@ -32,7 +32,21 @@ const Control = () => {
     // 进入控制页面时锁定为横屏 + 沉浸式状态栏
     lockToLandscape();
     setImmersiveStatusBar();
-  }, [navigate]);
+
+    // 监听连接状态变化
+    const unsubscribe = ros2Connection.addConnectionListener((connected) => {
+      setIsConnected(connected);
+      if (connected) {
+        toast({ title: "已恢复连接", description: "ROS2服务器连接已恢复" });
+      } else {
+        toast({ title: "连接断开", description: "正在尝试自动重连...", variant: "destructive" });
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [navigate, toast]);
 
   const handleChassisToggle = () => {
     const newState = !chassisEnabled;

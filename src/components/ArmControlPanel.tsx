@@ -100,19 +100,16 @@ export const ArmControlPanel = ({ isEnabled, isConnected }: ArmControlPanelProps
         </Button>
       </div>
 
-      {/* 3D Model - 占据更大空间 */}
-      <div className="flex-1 min-h-0">
+      {/* 3D Model - 缩小高度 */}
+      <div className="h-24 flex-shrink-0">
         <ArmModel3D yaw={yaw} roll={roll} updown={updown} />
       </div>
 
-      {/* Control Sliders - 更紧凑 */}
-      <div className="grid grid-cols-3 gap-2 mt-1">
+      {/* Control Sliders - 三排纵向排列，增大滑块长度 */}
+      <div className="flex-1 flex flex-col gap-2 mt-2">
         {/* Yaw: ±90° */}
-        <div className="space-y-1">
-          <div className="flex justify-between items-center">
-            <span className="text-[9px] text-muted-foreground">YAW</span>
-            <span className="text-[10px] font-medium text-primary">{yaw}°</span>
-          </div>
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] text-muted-foreground w-10 flex-shrink-0">YAW</span>
           <Slider
             value={[yaw]}
             onValueChange={handleYawChange}
@@ -120,16 +117,14 @@ export const ArmControlPanel = ({ isEnabled, isConnected }: ArmControlPanelProps
             max={90}
             step={1}
             disabled={isDisabled}
-            className="w-full"
+            className="flex-1"
           />
+          <span className="text-[11px] font-medium text-primary w-12 text-right flex-shrink-0">{yaw}°</span>
         </div>
 
         {/* Roll: ±180° */}
-        <div className="space-y-1">
-          <div className="flex justify-between items-center">
-            <span className="text-[9px] text-muted-foreground">ROLL</span>
-            <span className="text-[10px] font-medium text-primary">{roll}°</span>
-          </div>
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] text-muted-foreground w-10 flex-shrink-0">ROLL</span>
           <Slider
             value={[roll]}
             onValueChange={handleRollChange}
@@ -137,16 +132,14 @@ export const ArmControlPanel = ({ isEnabled, isConnected }: ArmControlPanelProps
             max={180}
             step={1}
             disabled={isDisabled}
-            className="w-full"
+            className="flex-1"
           />
+          <span className="text-[11px] font-medium text-primary w-12 text-right flex-shrink-0">{roll}°</span>
         </div>
 
         {/* Updown: 0-8cm */}
-        <div className="space-y-1">
-          <div className="flex justify-between items-center">
-            <span className="text-[9px] text-muted-foreground">LIFT</span>
-            <span className="text-[10px] font-medium text-primary">{updown}cm</span>
-          </div>
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] text-muted-foreground w-10 flex-shrink-0">LIFT</span>
           <Slider
             value={[updown]}
             onValueChange={handleUpdownChange}
@@ -154,8 +147,9 @@ export const ArmControlPanel = ({ isEnabled, isConnected }: ArmControlPanelProps
             max={8}
             step={0.1}
             disabled={isDisabled}
-            className="w-full"
+            className="flex-1"
           />
+          <span className="text-[11px] font-medium text-primary w-12 text-right flex-shrink-0">{updown}cm</span>
         </div>
       </div>
     </div>
