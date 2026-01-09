@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, RotateCcw, RotateCw, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ros2Connection } from "@/lib/ros2Connection";
@@ -11,6 +11,8 @@ interface ChassisControlPanelProps {
 export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPanelProps) => {
   const [speed, setSpeed] = useState(500);
   const [activeDirection, setActiveDirection] = useState<string | null>(null);
+  const releaseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isPressingRef = useRef(false);
 
   const sendControl = useCallback((x: number, y: number, z: number) => {
     if (isEnabled && isConnected) {
@@ -18,26 +20,96 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
     }
   }, [isEnabled, isConnected]);
 
-  const handleDirectionPress = (direction: string, x: number, y: number) => {
-    if (!isEnabled || !isConnected) return;
-    setActiveDirection(direction);
-    const speedValue = speed / 1000;
-    sendControl(x * speedValue, y * speedValue, 0);
-  };
-
-  const handleRotationPress = (direction: string, zDirection: number) => {
-    if (!isEnabled || !isConnected) return;
-    setActiveDirection(direction);
-    const zSpeed = 206.7 * (speed / 1000);
-    sendControl(0, 0, zDirection * zSpeed);
-  };
-
-  const handleRelease = useCallback(() => {
+  // 强制释放 - 发送停止指令
+  const forceRelease = useCallback(() => {
+    isPressingRef.current = false;
     setActiveDirection(null);
     if (isEnabled && isConnected) {
       sendControl(0, 0, 0);
     }
+    if (releaseTimeoutRef.current) {
+      clearTimeout(releaseTimeoutRef.current);
+      releaseTimeoutRef.current = null;
+    }
   }, [isEnabled, isConnected, sendControl]);
+
+  const handleDirectionPress = useCallback((direction: string, x: number, y: number) => {
+    if (!isEnabled || !isConnected) return;
+    
+    // 清除之前的超时
+    if (releaseTimeoutRef.current) {
+      clearTimeout(releaseTimeoutRef.current);
+    }
+    
+    isPressingRef.current = true;
+    setActiveDirection(direction);
+    const speedValue = speed / 1000;
+    sendControl(x * speedValue, y * speedValue, 0);
+    
+    // 安全超时：3秒后自动释放（防止卡键）
+    releaseTimeoutRef.current = setTimeout(() => {
+      if (isPressingRef.current) {
+        forceRelease();
+      }
+    }, 3000);
+  }, [isEnabled, isConnected, speed, sendControl, forceRelease]);
+
+  const handleRotationPress = useCallback((direction: string, zDirection: number) => {
+    if (!isEnabled || !isConnected) return;
+    
+    if (releaseTimeoutRef.current) {
+      clearTimeout(releaseTimeoutRef.current);
+    }
+    
+    isPressingRef.current = true;
+    setActiveDirection(direction);
+    const zSpeed = 206.7 * (speed / 1000);
+    sendControl(0, 0, zDirection * zSpeed);
+    
+    releaseTimeoutRef.current = setTimeout(() => {
+      if (isPressingRef.current) {
+        forceRelease();
+      }
+    }, 3000);
+  }, [isEnabled, isConnected, speed, sendControl, forceRelease]);
+
+  const handleRelease = useCallback(() => {
+    forceRelease();
+  }, [forceRelease]);
+
+  // 全局事件监听 - 备用释放机制
+  useEffect(() => {
+    const globalRelease = () => {
+      if (isPressingRef.current) {
+        forceRelease();
+      }
+    };
+
+    // 页面可见性变化时释放
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        forceRelease();
+      }
+    };
+
+    // 全局触摸/鼠标释放监听
+    window.addEventListener('touchend', globalRelease, { passive: true });
+    window.addEventListener('touchcancel', globalRelease, { passive: true });
+    window.addEventListener('mouseup', globalRelease, { passive: true });
+    window.addEventListener('blur', globalRelease);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('touchend', globalRelease);
+      window.removeEventListener('touchcancel', globalRelease);
+      window.removeEventListener('mouseup', globalRelease);
+      window.removeEventListener('blur', globalRelease);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (releaseTimeoutRef.current) {
+        clearTimeout(releaseTimeoutRef.current);
+      }
+    };
+  }, [forceRelease]);
 
   const adjustSpeed = (delta: number) => {
     setSpeed((prev) => Math.min(Math.max(prev + delta, 100), 2000));
@@ -46,7 +118,6 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isEnabled || !isConnected) return;
-      const speedValue = speed / 1000;
       switch (e.key.toLowerCase()) {
         case 'w': handleDirectionPress('forward', 0, 1); break;
         case 's': handleDirectionPress('backward', 0, -1); break;
@@ -61,7 +132,7 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [isEnabled, isConnected, speed]);
+  }, [isEnabled, isConnected, speed, handleDirectionPress, handleRelease]);
 
   const isDisabled = !isEnabled || !isConnected;
 
@@ -79,20 +150,36 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
     className?: string;
   }) => (
     <button
-      onMouseDown={(e) => { e.preventDefault(); handleDirectionPress(direction, x, y); }}
-      onMouseUp={(e) => { e.preventDefault(); handleRelease(); }}
-      onMouseLeave={(e) => { e.preventDefault(); handleRelease(); }}
-      onTouchStart={(e) => { e.preventDefault(); handleDirectionPress(direction, x, y); }}
-      onTouchEnd={(e) => { e.preventDefault(); handleRelease(); }}
-      onTouchCancel={(e) => { e.preventDefault(); handleRelease(); }}
+      onPointerDown={(e) => { 
+        e.preventDefault(); 
+        e.stopPropagation();
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        handleDirectionPress(direction, x, y); 
+      }}
+      onPointerUp={(e) => { 
+        e.preventDefault(); 
+        e.stopPropagation();
+        (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+        handleRelease(); 
+      }}
+      onPointerLeave={(e) => { 
+        e.preventDefault(); 
+        handleRelease(); 
+      }}
+      onPointerCancel={(e) => { 
+        e.preventDefault(); 
+        handleRelease(); 
+      }}
+      onContextMenu={(e) => e.preventDefault()}
       disabled={isDisabled}
       className={`w-14 h-14 rounded-lg flex items-center justify-center transition-all touch-none select-none ${
         activeDirection === direction 
           ? 'bg-primary/30 border-primary text-primary' 
           : 'bg-secondary/50 border-border/50 text-foreground hover:bg-secondary'
       } border disabled:opacity-30 ${className}`}
+      style={{ WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}
     >
-      <Icon className="w-6 h-6" />
+      <Icon className="w-6 h-6 pointer-events-none" />
     </button>
   );
 
@@ -108,21 +195,37 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
     zDirection: number;
   }) => (
     <button
-      onMouseDown={(e) => { e.preventDefault(); handleRotationPress(direction, zDirection); }}
-      onMouseUp={(e) => { e.preventDefault(); handleRelease(); }}
-      onMouseLeave={(e) => { e.preventDefault(); handleRelease(); }}
-      onTouchStart={(e) => { e.preventDefault(); handleRotationPress(direction, zDirection); }}
-      onTouchEnd={(e) => { e.preventDefault(); handleRelease(); }}
-      onTouchCancel={(e) => { e.preventDefault(); handleRelease(); }}
+      onPointerDown={(e) => { 
+        e.preventDefault(); 
+        e.stopPropagation();
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        handleRotationPress(direction, zDirection); 
+      }}
+      onPointerUp={(e) => { 
+        e.preventDefault(); 
+        e.stopPropagation();
+        (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+        handleRelease(); 
+      }}
+      onPointerLeave={(e) => { 
+        e.preventDefault(); 
+        handleRelease(); 
+      }}
+      onPointerCancel={(e) => { 
+        e.preventDefault(); 
+        handleRelease(); 
+      }}
+      onContextMenu={(e) => e.preventDefault()}
       disabled={isDisabled}
       className={`w-12 h-12 rounded-full flex flex-col items-center justify-center transition-all touch-none select-none ${
         activeDirection === direction 
           ? 'bg-primary/30 border-primary text-primary' 
           : 'bg-secondary/50 border-border/50 text-foreground hover:bg-secondary'
       } border disabled:opacity-30`}
+      style={{ WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}
     >
-      <Icon className="w-4 h-4" />
-      <span className="text-[10px] mt-0.5">{label}</span>
+      <Icon className="w-4 h-4 pointer-events-none" />
+      <span className="text-[10px] mt-0.5 pointer-events-none">{label}</span>
     </button>
   );
 
