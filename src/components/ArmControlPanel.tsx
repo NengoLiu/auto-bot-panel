@@ -1,10 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
 import { ros2Connection } from "@/lib/ros2Connection";
 import { useToast } from "@/hooks/use-toast";
 import { ArmModel3D } from "./ArmModel3D";
+
+const ARM_STORAGE_KEY = "arm_control_state";
+
+const loadArmState = () => {
+  try {
+    const saved = sessionStorage.getItem(ARM_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : {};
+  } catch {
+    return {};
+  }
+};
+
+const saveArmState = (state: { yaw: number; roll: number; updown: number }) => {
+  try {
+    sessionStorage.setItem(ARM_STORAGE_KEY, JSON.stringify(state));
+  } catch {}
+};
 
 interface ArmControlPanelProps {
   isEnabled: boolean;
@@ -13,9 +30,15 @@ interface ArmControlPanelProps {
 
 export const ArmControlPanel = ({ isEnabled, isConnected }: ArmControlPanelProps) => {
   const { toast } = useToast();
-  const [yaw, setYaw] = useState(0);
-  const [roll, setRoll] = useState(0);
-  const [updown, setUpdown] = useState(0);
+  const savedState = loadArmState();
+  const [yaw, setYaw] = useState(savedState.yaw ?? 0);
+  const [roll, setRoll] = useState(savedState.roll ?? 0);
+  const [updown, setUpdown] = useState(savedState.updown ?? 0);
+
+  // 持久化状态
+  useEffect(() => {
+    saveArmState({ yaw, roll, updown });
+  }, [yaw, roll, updown]);
 
   const sendArmControl = (yawVal: number, rollVal: number, updownVal: number) => {
     if (isEnabled && isConnected) {

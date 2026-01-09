@@ -8,11 +8,34 @@ interface ChassisControlPanelProps {
   isConnected: boolean;
 }
 
+const CHASSIS_STORAGE_KEY = "chassis_control_state";
+
+const loadChassisState = () => {
+  try {
+    const saved = sessionStorage.getItem(CHASSIS_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : {};
+  } catch {
+    return {};
+  }
+};
+
+const saveChassisState = (state: { speed: number }) => {
+  try {
+    sessionStorage.setItem(CHASSIS_STORAGE_KEY, JSON.stringify(state));
+  } catch {}
+};
+
 export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPanelProps) => {
-  const [speed, setSpeed] = useState(500);
+  const savedState = loadChassisState();
+  const [speed, setSpeed] = useState(savedState.speed ?? 500);
   const [activeDirection, setActiveDirection] = useState<string | null>(null);
   const releaseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isPressingRef = useRef(false);
+
+  // 持久化速度设置
+  useEffect(() => {
+    saveChassisState({ speed });
+  }, [speed]);
 
   const sendControl = useCallback((x: number, y: number, z: number) => {
     if (isEnabled && isConnected) {
