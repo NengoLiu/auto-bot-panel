@@ -6,12 +6,8 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 // 设置沉浸式状态栏（透明背景，内容延伸到状态栏下方）
 export const setImmersiveStatusBar = async () => {
   try {
-    // 设置状态栏透明
-    await StatusBar.setBackgroundColor({ color: '#00000000' });
-    // 设置状态栏样式为浅色图标（适配深色背景）
-    await StatusBar.setStyle({ style: Style.Dark });
-    // 让内容延伸到状态栏下方
-    await StatusBar.setOverlaysWebView({ overlay: true });
+    // 直接隐藏状态栏，避免重叠问题
+    await StatusBar.hide();
   } catch {
     console.log('StatusBar plugin not available (web environment)');
   }
