@@ -72,10 +72,24 @@ export class ROS2Connection {
   private pumpTopic: ROSLIB.Topic | null = null;
   private chassisTopic: ROSLIB.Topic | null = null;
   private armTopic: ROSLIB.Topic | null = null;
+  private reconnectTimer: ReturnType<typeof setInterval> | null = null;
+  private lastUrl: string | null = null;
+  private connectionListeners: Set<(connected: boolean) => void> = new Set();
+
+  // 添加连接状态监听器
+  addConnectionListener(listener: (connected: boolean) => void) {
+    this.connectionListeners.add(listener);
+    return () => this.connectionListeners.delete(listener);
+  }
+
+  private notifyListeners(connected: boolean) {
+    this.connectionListeners.forEach(listener => listener(connected));
+  }
 
   connect(url: string): Promise<void> {
     return new Promise((resolve, reject) => {
       console.log('正在连接到 ROS2 WebSocket 服务器:', url);
+      this.lastUrl = url;
       
       const timeout = setTimeout(() => {
         if (this.ros) this.ros.close();
@@ -87,17 +101,92 @@ export class ROS2Connection {
       this.ros.on('connection', () => {
         clearTimeout(timeout);
         console.log('✓ 成功连接到 ROS2 服务器');
+        this.stopAutoReconnect();
+        this.notifyListeners(true);
         resolve();
       });
 
       this.ros.on('error', (error: any) => {
         clearTimeout(timeout);
         console.error('✗ ROS2 连接错误:', error);
+        this.notifyListeners(false);
         reject(new Error('连接失败：请检查 rosbridge 状态和网络'));
       });
 
       this.ros.on('close', () => {
         console.log('ROS2 连接已关闭');
+        this.notifyListeners(false);
+        // 断联时自动启动重连
+        this.startAutoReconnect();
+      });
+    });
+  }
+
+  // 自动重连逻辑
+  private startAutoReconnect() {
+    if (this.reconnectTimer || !this.lastUrl) return;
+    
+    console.log('启动自动重连...');
+    this.reconnectTimer = setInterval(async () => {
+      if (this.isConnected()) {
+        this.stopAutoReconnect();
+        return;
+      }
+
+      console.log('尝试重新连接...');
+      try {
+        await this.reconnect();
+        console.log('✓ 重连成功');
+      } catch (e) {
+        console.log('重连失败，5秒后重试');
+      }
+    }, 5000);
+  }
+
+  private stopAutoReconnect() {
+    if (this.reconnectTimer) {
+      clearInterval(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+  }
+
+  // 静默重连（不reject）
+  private reconnect(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.lastUrl) {
+        reject(new Error('没有可用的连接URL'));
+        return;
+      }
+
+      // 清理旧的topic引用
+      this.pumpTopic = null;
+      this.chassisTopic = null;
+      this.armTopic = null;
+
+      this.ros = new ROSLIB.Ros({ url: this.lastUrl });
+
+      const timeout = setTimeout(() => {
+        if (this.ros) this.ros.close();
+        reject(new Error('重连超时'));
+      }, 5000);
+
+      this.ros.on('connection', () => {
+        clearTimeout(timeout);
+        this.stopAutoReconnect();
+        this.notifyListeners(true);
+        // 重连后重新发送establish请求
+        this.sendConnectionEstablishRequest(1);
+        resolve();
+      });
+
+      this.ros.on('error', () => {
+        clearTimeout(timeout);
+        reject(new Error('重连失败'));
+      });
+
+      this.ros.on('close', () => {
+        this.notifyListeners(false);
+        this.startAutoReconnect();
       });
     });
   }
