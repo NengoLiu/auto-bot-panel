@@ -1,22 +1,66 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Info, Zap, Layers, Minus, Plus, ArrowLeft, ArrowRight } from "lucide-react";
 import { ros2Connection } from "@/lib/ros2Connection";
 import { toast } from "sonner";
+
+const STORAGE_KEY = "semi_auto_state";
+
+interface SemiAutoState {
+  bladeRoller: "blade" | "roller";
+  direction: "left" | "right";
+  length: number;
+  width: number;
+  thickness: number;
+  isConfigured: boolean;
+  isStopped: boolean;
+  lastConfig: any;
+}
+
+const loadState = (): Partial<SemiAutoState> => {
+  try {
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : {};
+  } catch {
+    return {};
+  }
+};
+
+const saveState = (state: SemiAutoState) => {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {}
+};
 
 interface SemiAutoControlPanelProps {
   isConnected: boolean;
 }
 
 export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps) => {
-  const [bladeRoller, setBladeRoller] = useState<"blade" | "roller">("blade");
-  const [direction, setDirection] = useState<"left" | "right">("left");
-  const [length, setLength] = useState(10);
-  const [width, setWidth] = useState(1.6);
-  const [thickness, setThickness] = useState(5);
-  const [isConfigured, setIsConfigured] = useState(false);
-  const [isStopped, setIsStopped] = useState(false);
-  const [lastConfig, setLastConfig] = useState<any>(null);
+  const savedState = loadState();
+  
+  const [bladeRoller, setBladeRoller] = useState<"blade" | "roller">(savedState.bladeRoller || "blade");
+  const [direction, setDirection] = useState<"left" | "right">(savedState.direction || "left");
+  const [length, setLength] = useState(savedState.length ?? 10);
+  const [width, setWidth] = useState(savedState.width ?? 1.6);
+  const [thickness, setThickness] = useState(savedState.thickness ?? 5);
+  const [isConfigured, setIsConfigured] = useState(savedState.isConfigured ?? false);
+  const [isStopped, setIsStopped] = useState(savedState.isStopped ?? false);
+  const [lastConfig, setLastConfig] = useState<any>(savedState.lastConfig || null);
+
+  // 持久化状态到sessionStorage
+  useEffect(() => {
+    saveState({
+      bladeRoller,
+      direction,
+      length,
+      width,
+      thickness,
+      isConfigured,
+      isStopped,
+      lastConfig,
+    });
+  }, [bladeRoller, direction, length, width, thickness, isConfigured, isStopped, lastConfig]);
 
   const adjustValue = (
     setter: React.Dispatch<React.SetStateAction<number>>,
