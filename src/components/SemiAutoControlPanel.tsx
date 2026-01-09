@@ -13,8 +13,6 @@ interface SemiAutoState {
   width: number;
   thickness: number;
   isConfigured: boolean;
-  isStopped: boolean;
-  lastConfig: any;
 }
 
 const loadState = (): Partial<SemiAutoState> => {
@@ -45,8 +43,6 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
   const [width, setWidth] = useState(savedState.width ?? 1.6);
   const [thickness, setThickness] = useState(savedState.thickness ?? 5);
   const [isConfigured, setIsConfigured] = useState(savedState.isConfigured ?? false);
-  const [isStopped, setIsStopped] = useState(savedState.isStopped ?? false);
-  const [lastConfig, setLastConfig] = useState<any>(savedState.lastConfig || null);
 
   // 持久化状态到sessionStorage
   useEffect(() => {
@@ -57,10 +53,8 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
       width,
       thickness,
       isConfigured,
-      isStopped,
-      lastConfig,
     });
-  }, [bladeRoller, direction, length, width, thickness, isConfigured, isStopped, lastConfig]);
+  }, [bladeRoller, direction, length, width, thickness, isConfigured]);
 
   const adjustValue = (
     setter: React.Dispatch<React.SetStateAction<number>>,
@@ -99,28 +93,14 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
 
     toast.success("模式设置已发送");
     setIsConfigured(true);
-    setIsStopped(false);
-    setLastConfig(config);
   };
 
   const handleStop = (stopCmd: number) => {
     if (!isConnected) return;
     ros2Connection.sendStopRequest(stopCmd);
     toast.success("停止指令已发送");
-    setIsStopped(true);
-  };
-
-  const handleContinue = () => {
-    if (!isConnected || !lastConfig) return;
-    ros2Connection.sendSemiModeRequest(
-      lastConfig.blade_roller,
-      lastConfig.direction,
-      lastConfig.width,
-      lastConfig.length,
-      lastConfig.thickness
-    );
-    toast.success("继续施工");
-    setIsStopped(false);
+    // 紧急停止后解锁参数，允许重新配置
+    setIsConfigured(false);
   };
 
   const NumberInput = ({
@@ -289,7 +269,7 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
               <span className="text-[8px] text-primary-foreground/70">START</span>
             </div>
           </button>
-        ) : !isStopped ? (
+        ) : (
           <div className="flex flex-col gap-2">
             <Button
               onClick={() => handleStop(1)}
@@ -310,17 +290,6 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
               <span className="text-[8px] opacity-70 ml-1">SWAP</span>
             </Button>
           </div>
-        ) : (
-          <button
-            onClick={handleContinue}
-            className="w-24 h-24 rounded-xl bg-gradient-to-br from-primary to-primary/60 hover:from-primary/90 hover:to-primary/50 transition-all flex flex-col items-center justify-center gap-1 shadow-lg shadow-primary/30"
-          >
-            <Play className="w-10 h-10 text-primary-foreground" />
-            <div className="text-center">
-              <span className="text-sm font-semibold text-primary-foreground block">继续</span>
-              <span className="text-[8px] text-primary-foreground/70">RESUME</span>
-            </div>
-          </button>
         )}
 
         {/* 状态提示 */}
