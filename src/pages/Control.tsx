@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { ros2Connection } from "@/lib/ros2Connection";
+import { lockToLandscape } from "@/lib/screenOrientation";
 import { ControlHeader } from "@/components/ControlHeader";
 import { ControlSidebar } from "@/components/ControlSidebar";
 import { PowerMatrix } from "@/components/PowerMatrix";
@@ -27,6 +28,9 @@ const Control = () => {
       return;
     }
     setIsConnected(ros2Connection.isConnected());
+    
+    // 进入控制页面时锁定为横屏
+    lockToLandscape();
   }, [navigate]);
 
   const handleChassisToggle = () => {
@@ -57,57 +61,67 @@ const Control = () => {
   const isModeActive = currentMode !== null;
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-screen bg-background overflow-hidden">
       <ControlHeader onMenuClick={() => setSidebarOpen(true)} isConnected={isConnected} />
       <ControlSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex-1 overflow-auto p-4">
-        <Tabs value={currentMode || ""} onValueChange={handleModeChange} className="space-y-4">
-          <div className="flex justify-center">
-            <TabsList className="bg-secondary/30 border border-border/50">
-              <TabsTrigger value="manual" className={`font-display tracking-wider data-[state=active]:bg-primary data-[state=active]:text-primary-foreground ${!currentMode ? 'opacity-70' : ''}`}>
-                <div className="flex flex-col items-center py-1">
-                  <span className="text-sm font-semibold">手动模式</span>
-                  <span className="text-[10px] opacity-70">MANUAL</span>
-                </div>
+      <div className="flex-1 overflow-hidden p-2">
+        <Tabs value={currentMode || ""} onValueChange={handleModeChange} className="h-full flex flex-col">
+          {/* 模式切换标签 - 紧凑设计 */}
+          <div className="flex justify-center mb-2">
+            <TabsList className="bg-secondary/30 border border-border/50 h-9">
+              <TabsTrigger value="manual" className={`font-display tracking-wider text-xs px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground ${!currentMode ? 'opacity-70' : ''}`}>
+                <span className="font-semibold">手动</span>
+                <span className="text-[9px] opacity-70 ml-1">MANUAL</span>
               </TabsTrigger>
-              <TabsTrigger value="semiauto" className={`font-display tracking-wider data-[state=active]:bg-accent data-[state=active]:text-accent-foreground ${!currentMode ? 'opacity-70' : ''}`}>
-                <div className="flex flex-col items-center py-1">
-                  <span className="text-sm font-semibold">半自动模式</span>
-                  <span className="text-[10px] opacity-70">SEMI-AUTO</span>
-                </div>
+              <TabsTrigger value="semiauto" className={`font-display tracking-wider text-xs px-4 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground ${!currentMode ? 'opacity-70' : ''}`}>
+                <span className="font-semibold">半自动</span>
+                <span className="text-[9px] opacity-70 ml-1">SEMI</span>
               </TabsTrigger>
             </TabsList>
           </div>
 
           {/* 未选择模式时显示提示 */}
           {!isModeActive && (
-            <div className="flex flex-col items-center justify-center py-20 space-y-4">
-              <div className="text-muted-foreground text-center space-y-2">
-                <p className="text-lg font-semibold">请选择操作模式</p>
-                <p className="text-xs opacity-70">SELECT MODE</p>
-              </div>
-              <div className="grid grid-cols-2 gap-8 mt-8 opacity-30 blur-sm pointer-events-none">
-                <div className="bg-card/50 border border-border/30 rounded-lg p-8 h-40" />
-                <div className="bg-card/50 border border-border/30 rounded-lg p-8 h-40" />
-                <div className="bg-card/50 border border-border/30 rounded-lg p-8 h-40" />
-                <div className="bg-card/50 border border-border/30 rounded-lg p-8 h-40" />
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="text-muted-foreground text-center space-y-1">
+                <p className="text-base font-semibold">请选择操作模式</p>
+                <p className="text-[10px] opacity-70">SELECT MODE</p>
               </div>
             </div>
           )}
 
-          <TabsContent value="manual" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <PowerMatrix chassisEnabled={chassisEnabled} armEnabled={armEnabled} isConnected={isConnected} onChassisToggle={handleChassisToggle} onArmToggle={handleArmToggle} />
-              <FluidInject isConnected={isConnected} />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <ChassisControlPanel isEnabled={chassisEnabled} isConnected={isConnected} />
-              <ArmControlPanel isEnabled={armEnabled} isConnected={isConnected} />
+          {/* 手动模式 - 横屏两列布局 */}
+          <TabsContent value="manual" className="flex-1 m-0 overflow-hidden">
+            <div className="h-full grid grid-cols-2 gap-2">
+              {/* 左侧：底盘控制 + 电源 + 泵控 */}
+              <div className="flex flex-col gap-2 overflow-hidden">
+                {/* 电源和泵控 - 水平排列 */}
+                <div className="grid grid-cols-2 gap-2 flex-shrink-0">
+                  <PowerMatrix 
+                    chassisEnabled={chassisEnabled} 
+                    armEnabled={armEnabled} 
+                    isConnected={isConnected} 
+                    onChassisToggle={handleChassisToggle} 
+                    onArmToggle={handleArmToggle} 
+                  />
+                  <FluidInject isConnected={isConnected} />
+                </div>
+                {/* 底盘控制 */}
+                <div className="flex-1 min-h-0">
+                  <ChassisControlPanel isEnabled={chassisEnabled} isConnected={isConnected} />
+                </div>
+              </div>
+              
+              {/* 右侧：机械臂控制 */}
+              <div className="h-full overflow-hidden">
+                <ArmControlPanel isEnabled={armEnabled} isConnected={isConnected} />
+              </div>
             </div>
           </TabsContent>
 
-          <TabsContent value="semiauto">
+          {/* 半自动模式 */}
+          <TabsContent value="semiauto" className="flex-1 m-0 overflow-auto">
             <SemiAutoControlPanel isConnected={isConnected} />
           </TabsContent>
         </Tabs>

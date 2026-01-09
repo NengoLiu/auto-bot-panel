@@ -195,14 +195,14 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
       }}
       onContextMenu={(e) => e.preventDefault()}
       disabled={isDisabled}
-      className={`w-14 h-14 rounded-lg flex items-center justify-center transition-all touch-none select-none ${
+      className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all touch-none select-none ${
         activeDirection === direction 
           ? 'bg-primary/30 border-primary text-primary' 
           : 'bg-secondary/50 border-border/50 text-foreground hover:bg-secondary'
       } border disabled:opacity-30 ${className}`}
       style={{ WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}
     >
-      <Icon className="w-6 h-6 pointer-events-none" />
+      <Icon className="w-5 h-5 pointer-events-none" />
     </button>
   );
 
@@ -240,73 +240,70 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
       }}
       onContextMenu={(e) => e.preventDefault()}
       disabled={isDisabled}
-      className={`w-12 h-12 rounded-full flex flex-col items-center justify-center transition-all touch-none select-none ${
+      className={`w-10 h-10 rounded-full flex flex-col items-center justify-center transition-all touch-none select-none ${
         activeDirection === direction 
           ? 'bg-primary/30 border-primary text-primary' 
           : 'bg-secondary/50 border-border/50 text-foreground hover:bg-secondary'
       } border disabled:opacity-30`}
       style={{ WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}
     >
-      <Icon className="w-4 h-4 pointer-events-none" />
-      <span className="text-[10px] mt-0.5 pointer-events-none">{label}</span>
+      <Icon className="w-3 h-3 pointer-events-none" />
+      <span className="text-[8px] pointer-events-none">{label}</span>
     </button>
   );
 
   return (
-    <div className="cyber-card p-4 space-y-4">
+    <div className="cyber-card p-2 h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center gap-2">
-        <div className="w-1 h-4 bg-primary rounded-full" />
-        <div>
-          <span className="text-xs font-semibold text-muted-foreground">底盘导航</span>
-          <span className="text-[10px] text-muted-foreground ml-2">NAV</span>
-        </div>
+      <div className="flex items-center gap-1 mb-1">
+        <div className="w-1 h-3 bg-primary rounded-full" />
+        <span className="text-[10px] font-semibold text-muted-foreground">底盘</span>
+        <span className="text-[8px] text-muted-foreground">NAV</span>
       </div>
 
-      {/* Direction Pad */}
-      <div className="flex flex-col items-center gap-2 py-4">
+      {/* Direction Pad - 更紧凑 */}
+      <div className="flex-1 flex flex-col items-center justify-center gap-1">
         <DirectionButton direction="forward" icon={ChevronUp} x={0} y={1} />
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <DirectionButton direction="left" icon={ChevronLeft} x={-1} y={0} />
-          <div className="w-14 h-14 rounded-lg bg-secondary/30 border border-border/30 flex items-center justify-center">
-            <div className="w-2 h-2 rounded-full bg-muted-foreground/50" />
+          <div className="w-10 h-10 rounded-lg bg-secondary/30 border border-border/30 flex items-center justify-center">
+            <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
           </div>
           <DirectionButton direction="right" icon={ChevronRight} x={1} y={0} />
         </div>
         <DirectionButton direction="backward" icon={ChevronDown} x={0} y={-1} />
         
-        {/* Rotation buttons on sides */}
-        <div className="flex items-center justify-between w-full mt-2 px-4">
+        {/* Rotation buttons */}
+        <div className="flex items-center justify-between w-full mt-1 px-2">
           <RotationButton direction="ccw" icon={RotateCcw} label="CCW" zDirection={1} />
           <RotationButton direction="cw" icon={RotateCw} label="CW" zDirection={-1} />
         </div>
       </div>
 
-      {/* Speed Control */}
-      <div className="cyber-border rounded-lg p-3">
-        <div className="text-center mb-2">
-          <span className="text-xs font-semibold text-muted-foreground">运动速度</span>
-          <span className="text-[10px] text-muted-foreground ml-2">MM/S</span>
-        </div>
-        <div className="flex items-center justify-between gap-4">
+      {/* Speed Control - 更紧凑 */}
+      <div className="cyber-border rounded-lg p-2 mt-1">
+        <div className="flex items-center justify-between gap-2">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => adjustSpeed(-50)}
             disabled={isDisabled}
-            className="rounded-full border border-border/50"
+            className="h-8 w-8 rounded-full border border-border/50"
           >
-            <Minus className="w-4 h-4" />
+            <Minus className="w-3 h-3" />
           </Button>
-          <span className="text-3xl font-bold text-primary">{speed}</span>
+          <div className="text-center">
+            <span className="text-xl font-bold text-primary">{speed}</span>
+            <span className="text-[8px] text-muted-foreground ml-1">mm/s</span>
+          </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => adjustSpeed(50)}
             disabled={isDisabled}
-            className="rounded-full border border-border/50"
+            className="h-8 w-8 rounded-full border border-border/50"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3 h-3" />
           </Button>
         </div>
       </div>

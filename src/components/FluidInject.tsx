@@ -25,25 +25,28 @@ export const FluidInject = ({ isConnected }: FluidInjectProps) => {
   };
 
   return (
-    <div className="cyber-card p-4">
+    <div className="cyber-card p-2 h-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Droplets className="w-4 h-4 text-primary" />
-          <div>
-            <span className="text-xs font-semibold text-destructive">泵控</span>
-            <span className="text-[10px] text-muted-foreground ml-2">PUMP</span>
-          </div>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1">
+          <Droplets className="w-3 h-3 text-primary" />
+          <span className="text-[10px] font-semibold text-destructive">泵控</span>
+          <span className="text-[8px] text-muted-foreground">PUMP</span>
         </div>
         <Switch
           checked={isActive}
           onCheckedChange={handleToggle}
           disabled={!isConnected}
+          className="scale-75"
         />
       </div>
 
       {/* Flow Rate Slider */}
-      <div className="space-y-2">
+      <div className="space-y-1">
+        <div className="flex justify-between text-[9px] text-muted-foreground">
+          <span>流速</span>
+          <span>{flowRate}%</span>
+        </div>
         <Slider
           value={[flowRate]}
           onValueChange={handleFlowChange}
