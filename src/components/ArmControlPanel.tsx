@@ -80,7 +80,7 @@ export const ArmControlPanel = ({ isEnabled, isConnected }: ArmControlPanelProps
   const isDisabled = !isEnabled || !isConnected;
 
   return (
-    <div className="cyber-card p-2 h-full flex flex-col">
+    <div className="cyber-card p-2 flex flex-col min-h-fit">
       {/* Header */}
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-1">
