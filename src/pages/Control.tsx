@@ -93,10 +93,10 @@ const Control = () => {
           )}
 
           {/* 手动模式 - 横屏两列布局 */}
-          <TabsContent value="manual" className="flex-1 m-0 overflow-hidden">
-            <div className="h-full grid grid-cols-2 gap-2">
+          <TabsContent value="manual" className="flex-1 m-0 overflow-auto -webkit-overflow-scrolling-touch">
+            <div className="min-h-full grid grid-cols-2 gap-2">
               {/* 左侧：底盘控制 + 电源 + 泵控 */}
-              <div className="flex flex-col gap-2 overflow-hidden">
+              <div className="flex flex-col gap-2">
                 {/* 电源和泵控 - 水平排列 */}
                 <div className="grid grid-cols-2 gap-2 flex-shrink-0">
                   <PowerMatrix 
@@ -115,7 +115,7 @@ const Control = () => {
               </div>
               
               {/* 右侧：机械臂控制 */}
-              <div className="h-full overflow-hidden">
+              <div className="min-h-full">
                 <ArmControlPanel isEnabled={armEnabled} isConnected={isConnected} />
               </div>
             </div>

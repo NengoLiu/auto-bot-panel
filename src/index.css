@@ -182,4 +182,10 @@
   .control-button:active {
     @apply bg-primary/20 border-primary;
   }
+
+  /* Android WebView滚动兼容性 */
+  .-webkit-overflow-scrolling-touch {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto !important;
+  }
 }
