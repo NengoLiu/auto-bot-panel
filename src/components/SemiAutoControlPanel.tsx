@@ -140,228 +140,195 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
     onDecrease: () => void;
     disabled: boolean;
   }) => (
-    <div className="space-y-2">
-      <div className="flex items-baseline gap-2">
-        <div>
-          <span className="text-xs font-semibold">{label}</span>
-          <span className="text-[10px] text-muted-foreground ml-1">{unit}</span>
-        </div>
+    <div className="flex items-center gap-1">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onDecrease}
+        disabled={disabled}
+        className="h-7 w-7 rounded-full border border-border/50"
+      >
+        <Minus className="w-3 h-3" />
+      </Button>
+      <div className="text-center min-w-[50px]">
+        <span className="text-lg font-bold text-primary">{value}</span>
+        <span className="text-[9px] text-muted-foreground ml-0.5">{unit}</span>
+        <div className="text-[9px] text-muted-foreground leading-none">{label}</div>
       </div>
-      <div className="flex items-center justify-between gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onDecrease}
-          disabled={disabled}
-          className="h-10 w-10 rounded-full border border-border/50"
-        >
-          <Minus className="w-4 h-4" />
-        </Button>
-        <span className="text-2xl font-bold text-primary min-w-[60px] text-center">{value}</span>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onIncrease}
-          disabled={disabled}
-          className="h-10 w-10 rounded-full border border-border/50"
-        >
-          <Plus className="w-4 h-4" />
-        </Button>
-      </div>
-      <div className="text-[10px] text-muted-foreground text-center">{labelEn}</div>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onIncrease}
+        disabled={disabled}
+        className="h-7 w-7 rounded-full border border-border/50"
+      >
+        <Plus className="w-3 h-3" />
+      </Button>
     </div>
   );
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Process Method Selection */}
-        <div className="cyber-card p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Zap className="w-4 h-4 text-accent" />
-            <div>
-              <span className="text-xs font-semibold text-accent">施工方式</span>
-              <span className="text-[10px] text-muted-foreground ml-2">METHOD</span>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <button
-              onClick={() => setBladeRoller("blade")}
-              disabled={isConfigured}
-              className={`w-full py-3 px-4 rounded-lg border transition-all ${
-                bladeRoller === "blade"
-                  ? "bg-destructive/20 border-destructive text-destructive"
-                  : "bg-secondary/30 border-border/50 text-muted-foreground hover:bg-secondary/50"
-              } disabled:opacity-50`}
-            >
-              <div>
-                <span className="text-sm font-semibold">刮涂</span>
-                <span className="text-[10px] opacity-70 ml-2">BLADE</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setBladeRoller("roller")}
-              disabled={isConfigured}
-              className={`w-full py-3 px-4 rounded-lg border transition-all ${
-                bladeRoller === "roller"
-                  ? "bg-destructive/20 border-destructive text-destructive"
-                  : "bg-secondary/30 border-border/50 text-muted-foreground hover:bg-secondary/50"
-              } disabled:opacity-50`}
-            >
-              <div>
-                <span className="text-sm font-semibold">辊涂</span>
-                <span className="text-[10px] opacity-70 ml-2">ROLLER</span>
-              </div>
-            </button>
-          </div>
-
-          {/* Direction Selection */}
-          <div className="mt-4 pt-4 border-t border-border/50">
-            <div className="flex items-center gap-2 mb-3">
-              <div>
-                <span className="text-xs font-semibold text-muted-foreground">施工方向</span>
-                <span className="text-[10px] text-muted-foreground ml-2">DIR</span>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDirection("left")}
-                disabled={isConfigured}
-                className={`flex-1 py-3 px-4 rounded-lg border transition-all flex items-center justify-center gap-2 ${
-                  direction === "left"
-                    ? "bg-primary/20 border-primary text-primary"
-                    : "bg-secondary/30 border-border/50 text-muted-foreground hover:bg-secondary/50"
-                } disabled:opacity-50`}
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <div>
-                  <span className="text-sm font-semibold">向左</span>
-                  <span className="text-[10px] opacity-70 ml-1">L</span>
-                </div>
-              </button>
-              <button
-                onClick={() => setDirection("right")}
-                disabled={isConfigured}
-                className={`flex-1 py-3 px-4 rounded-lg border transition-all flex items-center justify-center gap-2 ${
-                  direction === "right"
-                    ? "bg-primary/20 border-primary text-primary"
-                    : "bg-secondary/30 border-border/50 text-muted-foreground hover:bg-secondary/50"
-                } disabled:opacity-50`}
-              >
-                <div>
-                  <span className="text-sm font-semibold">向右</span>
-                  <span className="text-[10px] opacity-70 ml-1">R</span>
-                </div>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+    <div className="h-full grid grid-cols-3 gap-2 p-1">
+      {/* 左侧：施工方式 + 方向 */}
+      <div className="cyber-card p-2 flex flex-col">
+        <div className="flex items-center gap-1 mb-2">
+          <Zap className="w-3 h-3 text-accent" />
+          <span className="text-[10px] font-semibold text-accent">施工方式</span>
+          <span className="text-[8px] text-muted-foreground">METHOD</span>
+        </div>
+        <div className="flex gap-1 mb-2">
+          <button
+            onClick={() => setBladeRoller("blade")}
+            disabled={isConfigured}
+            className={`flex-1 py-1.5 px-2 rounded border text-xs transition-all ${
+              bladeRoller === "blade"
+                ? "bg-destructive/20 border-destructive text-destructive"
+                : "bg-secondary/30 border-border/50 text-muted-foreground"
+            } disabled:opacity-50`}
+          >
+            <span className="font-semibold">刮涂</span>
+            <span className="text-[8px] opacity-70 ml-1">BLADE</span>
+          </button>
+          <button
+            onClick={() => setBladeRoller("roller")}
+            disabled={isConfigured}
+            className={`flex-1 py-1.5 px-2 rounded border text-xs transition-all ${
+              bladeRoller === "roller"
+                ? "bg-destructive/20 border-destructive text-destructive"
+                : "bg-secondary/30 border-border/50 text-muted-foreground"
+            } disabled:opacity-50`}
+          >
+            <span className="font-semibold">辊涂</span>
+            <span className="text-[8px] opacity-70 ml-1">ROLLER</span>
+          </button>
         </div>
 
-        {/* Process Geometry */}
-        <div className="cyber-card p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Layers className="w-4 h-4 text-muted-foreground" />
-            <div>
-              <span className="text-xs font-semibold text-muted-foreground">施工尺寸</span>
-              <span className="text-[10px] text-muted-foreground ml-2">SIZE</span>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-3 gap-4">
-            <NumberInput
-              label="长度"
-              labelEn="LENGTH"
-              value={length}
-              unit="M"
-              onIncrease={() => adjustValue(setLength, 0.5, 1, 20, 0.5)}
-              onDecrease={() => adjustValue(setLength, -0.5, 1, 20, 0.5)}
-              disabled={isConfigured}
-            />
-            <NumberInput
-              label="宽度"
-              labelEn="WIDTH"
-              value={width}
-              unit="M"
-              onIncrease={() => adjustValue(setWidth, 0.1, 0.5, 2.6, 0.1)}
-              onDecrease={() => adjustValue(setWidth, -0.1, 0.5, 2.6, 0.1)}
-              disabled={isConfigured}
-            />
-            <NumberInput
-              label="厚度"
-              labelEn="THICK"
-              value={thickness}
-              unit="MM"
-              onIncrease={() => adjustValue(setThickness, 0.5, 1, 20, 0.5)}
-              onDecrease={() => adjustValue(setThickness, -0.5, 1, 20, 0.5)}
-              disabled={isConfigured}
-            />
-          </div>
+        {/* 方向选择 */}
+        <div className="flex items-center gap-1 mb-1">
+          <span className="text-[10px] font-semibold text-muted-foreground">施工方向</span>
+          <span className="text-[8px] text-muted-foreground">DIR</span>
+        </div>
+        <div className="flex gap-1">
+          <button
+            onClick={() => setDirection("left")}
+            disabled={isConfigured}
+            className={`flex-1 py-1.5 px-2 rounded border text-xs transition-all flex items-center justify-center gap-1 ${
+              direction === "left"
+                ? "bg-primary/20 border-primary text-primary"
+                : "bg-secondary/30 border-border/50 text-muted-foreground"
+            } disabled:opacity-50`}
+          >
+            <ArrowLeft className="w-3 h-3" />
+            <span className="font-semibold">左</span>
+          </button>
+          <button
+            onClick={() => setDirection("right")}
+            disabled={isConfigured}
+            className={`flex-1 py-1.5 px-2 rounded border text-xs transition-all flex items-center justify-center gap-1 ${
+              direction === "right"
+                ? "bg-primary/20 border-primary text-primary"
+                : "bg-secondary/30 border-border/50 text-muted-foreground"
+            } disabled:opacity-50`}
+          >
+            <span className="font-semibold">右</span>
+            <ArrowRight className="w-3 h-3" />
+          </button>
         </div>
       </div>
 
-      {/* Start Button */}
-      <div className="cyber-card p-8">
-        <div className="flex flex-col items-center justify-center">
-          {!isConfigured ? (
-            <button
-              onClick={handleSubmit}
-              disabled={!isConnected}
-              className="w-48 h-48 rounded-2xl bg-gradient-to-br from-primary to-primary/60 hover:from-primary/90 hover:to-primary/50 transition-all flex flex-col items-center justify-center gap-2 shadow-lg shadow-primary/30 disabled:opacity-30"
-            >
-              <Play className="w-16 h-16 text-primary-foreground" />
-              <div className="text-center">
-                <span className="text-xl font-semibold text-primary-foreground block">开始施工</span>
-                <span className="text-xs text-primary-foreground/70">START</span>
-              </div>
-            </button>
-          ) : !isStopped ? (
-            <div className="flex gap-4">
-              <Button
-                onClick={() => handleStop(1)}
-                variant="destructive"
-                size="lg"
-                className="px-8"
-              >
-                <div className="text-center">
-                  <span className="block">紧急停止</span>
-                  <span className="text-[10px] opacity-70">E-STOP</span>
-                </div>
-              </Button>
-              <Button
-                onClick={() => handleStop(2)}
-                variant="outline"
-                size="lg"
-                className="px-8"
-              >
-                <div className="text-center">
-                  <span className="block">更换配件</span>
-                  <span className="text-[10px] opacity-70">SWAP</span>
-                </div>
-              </Button>
-            </div>
-          ) : (
-            <button
-              onClick={handleContinue}
-              className="w-48 h-48 rounded-2xl bg-gradient-to-br from-primary to-primary/60 hover:from-primary/90 hover:to-primary/50 transition-all flex flex-col items-center justify-center gap-2 shadow-lg shadow-primary/30"
-            >
-              <Play className="w-16 h-16 text-primary-foreground" />
-              <div className="text-center">
-                <span className="text-xl font-semibold text-primary-foreground block">继续施工</span>
-                <span className="text-xs text-primary-foreground/70">RESUME</span>
-              </div>
-            </button>
-          )}
+      {/* 中间：施工尺寸 */}
+      <div className="cyber-card p-2 flex flex-col">
+        <div className="flex items-center gap-1 mb-2">
+          <Layers className="w-3 h-3 text-muted-foreground" />
+          <span className="text-[10px] font-semibold text-muted-foreground">施工尺寸</span>
+          <span className="text-[8px] text-muted-foreground">SIZE</span>
+        </div>
+        
+        <div className="flex-1 flex flex-col justify-center gap-2">
+          <NumberInput
+            label="长度 L"
+            labelEn="LENGTH"
+            value={length}
+            unit="M"
+            onIncrease={() => adjustValue(setLength, 0.5, 1, 20, 0.5)}
+            onDecrease={() => adjustValue(setLength, -0.5, 1, 20, 0.5)}
+            disabled={isConfigured}
+          />
+          <NumberInput
+            label="宽度 W"
+            labelEn="WIDTH"
+            value={width}
+            unit="M"
+            onIncrease={() => adjustValue(setWidth, 0.1, 0.5, 2.6, 0.1)}
+            onDecrease={() => adjustValue(setWidth, -0.1, 0.5, 2.6, 0.1)}
+            disabled={isConfigured}
+          />
+          <NumberInput
+            label="厚度 T"
+            labelEn="THICK"
+            value={thickness}
+            unit="MM"
+            onIncrease={() => adjustValue(setThickness, 0.5, 1, 20, 0.5)}
+            onDecrease={() => adjustValue(setThickness, -0.5, 1, 20, 0.5)}
+            disabled={isConfigured}
+          />
+        </div>
+      </div>
 
-          {/* Status Info */}
-          <div className="mt-6 flex items-center gap-2 px-4 py-2 rounded-full border border-border/50 bg-secondary/30">
-            <Info className="w-4 h-4 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">
-              {isConfigured 
-                ? "运行中 ACTIVE" 
-                : "请先配置参数 SET PARAMS"}
-            </span>
+      {/* 右侧：开始/停止按钮 */}
+      <div className="cyber-card p-2 flex flex-col items-center justify-center">
+        {!isConfigured ? (
+          <button
+            onClick={handleSubmit}
+            disabled={!isConnected}
+            className="w-24 h-24 rounded-xl bg-gradient-to-br from-primary to-primary/60 hover:from-primary/90 hover:to-primary/50 transition-all flex flex-col items-center justify-center gap-1 shadow-lg shadow-primary/30 disabled:opacity-30"
+          >
+            <Play className="w-10 h-10 text-primary-foreground" />
+            <div className="text-center">
+              <span className="text-sm font-semibold text-primary-foreground block">开始</span>
+              <span className="text-[8px] text-primary-foreground/70">START</span>
+            </div>
+          </button>
+        ) : !isStopped ? (
+          <div className="flex flex-col gap-2">
+            <Button
+              onClick={() => handleStop(1)}
+              variant="destructive"
+              size="sm"
+              className="text-xs px-4"
+            >
+              <span>紧急停止</span>
+              <span className="text-[8px] opacity-70 ml-1">E-STOP</span>
+            </Button>
+            <Button
+              onClick={() => handleStop(2)}
+              variant="outline"
+              size="sm"
+              className="text-xs px-4"
+            >
+              <span>更换配件</span>
+              <span className="text-[8px] opacity-70 ml-1">SWAP</span>
+            </Button>
           </div>
+        ) : (
+          <button
+            onClick={handleContinue}
+            className="w-24 h-24 rounded-xl bg-gradient-to-br from-primary to-primary/60 hover:from-primary/90 hover:to-primary/50 transition-all flex flex-col items-center justify-center gap-1 shadow-lg shadow-primary/30"
+          >
+            <Play className="w-10 h-10 text-primary-foreground" />
+            <div className="text-center">
+              <span className="text-sm font-semibold text-primary-foreground block">继续</span>
+              <span className="text-[8px] text-primary-foreground/70">RESUME</span>
+            </div>
+          </button>
+        )}
+
+        {/* 状态提示 */}
+        <div className="mt-2 flex items-center gap-1 px-2 py-1 rounded-full border border-border/50 bg-secondary/30">
+          <Info className="w-3 h-3 text-muted-foreground" />
+          <span className="text-[9px] text-muted-foreground">
+            {isConfigured ? "运行中" : "请配置"}
+          </span>
         </div>
       </div>
     </div>
