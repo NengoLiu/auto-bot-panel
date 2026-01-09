@@ -62,11 +62,11 @@ const Control = () => {
   const isModeActive = currentMode !== null;
 
   return (
-    <div className="flex flex-col h-screen bg-background overflow-hidden">
+    <div className="flex flex-col h-[100dvh] bg-background overflow-hidden safe-area-inset">
       <ControlHeader onMenuClick={() => setSidebarOpen(true)} isConnected={isConnected} />
       <ControlSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex-1 overflow-hidden p-2">
+      <div className="flex-1 overflow-hidden p-1.5 pb-safe">
         <Tabs value={currentMode || ""} onValueChange={handleModeChange} className="h-full flex flex-col">
           {/* 模式切换标签 - 紧凑设计 */}
           <div className="flex justify-center mb-2">
