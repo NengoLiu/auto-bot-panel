@@ -253,7 +253,7 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
   );
 
   return (
-    <div className="cyber-card p-2 h-full flex flex-col">
+    <div className="cyber-card p-2 flex flex-col min-h-fit">
       {/* Header */}
       <div className="flex items-center gap-1 mb-1">
         <div className="w-1 h-3 bg-primary rounded-full" />
