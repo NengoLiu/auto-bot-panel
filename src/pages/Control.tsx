@@ -66,7 +66,7 @@ const Control = () => {
       <ControlHeader onMenuClick={() => setSidebarOpen(true)} isConnected={isConnected} />
       <ControlSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex-1 overflow-hidden p-1.5 pb-safe">
+      <div className="flex-1 overflow-auto p-1.5 pb-safe">
         <Tabs value={currentMode || ""} onValueChange={handleModeChange} className="h-full flex flex-col">
           {/* 模式切换标签 - 紧凑设计 */}
           <div className="flex justify-center mb-2">
