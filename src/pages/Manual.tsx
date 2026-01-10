@@ -3,10 +3,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { ros2Connection } from "@/lib/ros2Connection";
 import { ConnectionBar } from "@/components/ConnectionBar";
-import { ManualControl } from "@/components/ManualControl";
+import { PowerMatrix } from "@/components/PowerMatrix";
+import { FluidInject } from "@/components/FluidInject";
 import { ChassisControlPanel } from "@/components/ChassisControlPanel";
-import { ArmControl } from "@/components/ArmControl";
-import { SemiAutoControl } from "@/components/SemiAutoControl";
+import { ArmControlPanel } from "@/components/ArmControlPanel";
+import { SemiAutoControlPanel } from "@/components/SemiAutoControlPanel";
 
 const Manual = () => {
   const { toast } = useToast();
@@ -116,20 +117,23 @@ const Manual = () => {
           <TabsContent value="manual" className="space-y-4 md:space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
               <div className="space-y-4 md:space-y-6">
-                <ManualControl
-                  chassisEnabled={chassisEnabled}
-                  armEnabled={armEnabled}
-                  isConnected={isConnected}
-                  onChassisToggle={handleChassisToggle}
-                  onArmToggle={handleArmToggle}
-                />
+                <div className="grid grid-cols-2 gap-4">
+                  <PowerMatrix
+                    chassisEnabled={chassisEnabled}
+                    armEnabled={armEnabled}
+                    isConnected={isConnected}
+                    onChassisToggle={handleChassisToggle}
+                    onArmToggle={handleArmToggle}
+                  />
+                  <FluidInject isConnected={isConnected} />
+                </div>
                 <ChassisControlPanel
                   isEnabled={chassisEnabled}
                   isConnected={isConnected}
                 />
               </div>
               <div>
-                <ArmControl
+                <ArmControlPanel
                   isEnabled={armEnabled}
                   isConnected={isConnected}
                 />
@@ -139,7 +143,7 @@ const Manual = () => {
 
           <TabsContent value="semiauto" className="space-y-6">
             <div className="flex justify-center">
-              <SemiAutoControl isConnected={isConnected} />
+              <SemiAutoControlPanel isConnected={isConnected} />
             </div>
           </TabsContent>
         </Tabs>
