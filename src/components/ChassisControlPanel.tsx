@@ -59,42 +59,21 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
   const handleDirectionPress = useCallback((direction: string, x: number, y: number) => {
     if (!isEnabled || !isConnected) return;
     
-    // 清除之前的超时
-    if (releaseTimeoutRef.current) {
-      clearTimeout(releaseTimeoutRef.current);
-    }
-    
     isPressingRef.current = true;
     setActiveDirection(direction);
     const speedValue = speed / 1000;
     sendControl(x * speedValue, y * speedValue, 0);
-    
-    // 安全超时：3秒后自动释放（防止卡键）
-    releaseTimeoutRef.current = setTimeout(() => {
-      if (isPressingRef.current) {
-        forceRelease();
-      }
-    }, 3000);
-  }, [isEnabled, isConnected, speed, sendControl, forceRelease]);
+  }, [isEnabled, isConnected, speed, sendControl]);
 
   const handleRotationPress = useCallback((direction: string, zDirection: number) => {
     if (!isEnabled || !isConnected) return;
     
-    if (releaseTimeoutRef.current) {
-      clearTimeout(releaseTimeoutRef.current);
-    }
-    
     isPressingRef.current = true;
     setActiveDirection(direction);
-    const zSpeed = 206.7 * (speed / 1000);
+    // 旋转速度减半：103.35 °/s @ 1m/s
+    const zSpeed = 103.35 * (speed / 1000);
     sendControl(0, 0, zDirection * zSpeed);
-    
-    releaseTimeoutRef.current = setTimeout(() => {
-      if (isPressingRef.current) {
-        forceRelease();
-      }
-    }, 3000);
-  }, [isEnabled, isConnected, speed, sendControl, forceRelease]);
+  }, [isEnabled, isConnected, speed, sendControl]);
 
   const handleRelease = useCallback(() => {
     forceRelease();
