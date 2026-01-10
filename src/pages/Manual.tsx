@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ros2Connection } from "@/lib/ros2Connection";
 import { ConnectionBar } from "@/components/ConnectionBar";
 import { ManualControl } from "@/components/ManualControl";
-import { ChassisControl } from "@/components/ChassisControl";
+import { ChassisControlPanel } from "@/components/ChassisControlPanel";
 import { ArmControl } from "@/components/ArmControl";
 import { SemiAutoControl } from "@/components/SemiAutoControl";
 
@@ -123,7 +123,7 @@ const Manual = () => {
                   onChassisToggle={handleChassisToggle}
                   onArmToggle={handleArmToggle}
                 />
-                <ChassisControl
+                <ChassisControlPanel
                   isEnabled={chassisEnabled}
                   isConnected={isConnected}
                 />
