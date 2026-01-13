@@ -12,6 +12,8 @@ import { ChassisControlPanel } from "@/components/ChassisControlPanel";
 import { ArmControlPanel } from "@/components/ArmControlPanel";
 import { SemiAutoControlPanel } from "@/components/SemiAutoControlPanel";
 
+const MODE_STORAGE_KEY = 'control_current_mode';
+
 const Control = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -19,7 +21,25 @@ const Control = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [chassisEnabled, setChassisEnabled] = useState(false);
   const [armEnabled, setArmEnabled] = useState(false);
-  const [currentMode, setCurrentMode] = useState<string | null>(null);
+  // 从sessionStorage恢复模式
+  const [currentMode, setCurrentMode] = useState<string | null>(() => {
+    try {
+      return sessionStorage.getItem(MODE_STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  });
+
+  // 持久化当前模式
+  useEffect(() => {
+    try {
+      if (currentMode) {
+        sessionStorage.setItem(MODE_STORAGE_KEY, currentMode);
+      } else {
+        sessionStorage.removeItem(MODE_STORAGE_KEY);
+      }
+    } catch {}
+  }, [currentMode]);
 
   useEffect(() => {
     const connected = sessionStorage.getItem("ros2_connected");
@@ -37,7 +57,7 @@ const Control = () => {
     const unsubscribe = ros2Connection.addConnectionListener((connected) => {
       setIsConnected(connected);
       if (connected) {
-        toast({ title: "已恢复连接", description: "ROS2服务器连接已恢复" });
+        toast({ title: "已恢复连接", description: "ROS2服务器连接已恢复，模式已同步" });
       } else {
         toast({ title: "连接断开", description: "正在尝试自动重连...", variant: "destructive" });
       }
