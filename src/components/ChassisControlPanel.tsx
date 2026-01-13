@@ -138,6 +138,38 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
 
   const isDisabled = !isEnabled || !isConnected;
 
+  // 增强的指针事件处理
+  const createPointerHandlers = (
+    onPress: () => void
+  ) => ({
+    onPointerDown: (e: React.PointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // 使用 currentTarget 确保正确捕获
+      const target = e.currentTarget as HTMLElement;
+      target.setPointerCapture(e.pointerId);
+      onPress();
+    },
+    onPointerUp: (e: React.PointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const target = e.currentTarget as HTMLElement;
+      if (target.hasPointerCapture(e.pointerId)) {
+        target.releasePointerCapture(e.pointerId);
+      }
+      handleRelease();
+    },
+    onPointerCancel: (e: React.PointerEvent) => {
+      e.preventDefault();
+      handleRelease();
+    },
+    onLostPointerCapture: () => {
+      // 当指针捕获丢失时也释放
+      handleRelease();
+    },
+    onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
+  });
+
   const DirectionButton = ({ 
     direction, 
     icon: Icon, 
@@ -150,40 +182,29 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
     x: number; 
     y: number;
     className?: string;
-  }) => (
-    <button
-      onPointerDown={(e) => { 
-        e.preventDefault(); 
-        e.stopPropagation();
-        (e.target as HTMLElement).setPointerCapture(e.pointerId);
-        handleDirectionPress(direction, x, y); 
-      }}
-      onPointerUp={(e) => { 
-        e.preventDefault(); 
-        e.stopPropagation();
-        (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-        handleRelease(); 
-      }}
-      onPointerLeave={(e) => { 
-        e.preventDefault(); 
-        handleRelease(); 
-      }}
-      onPointerCancel={(e) => { 
-        e.preventDefault(); 
-        handleRelease(); 
-      }}
-      onContextMenu={(e) => e.preventDefault()}
-      disabled={isDisabled}
-      className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all touch-none select-none ${
-        activeDirection === direction 
-          ? 'bg-primary/30 border-primary text-primary' 
-          : 'bg-secondary/50 border-border/50 text-foreground hover:bg-secondary'
-      } border disabled:opacity-30 ${className}`}
-      style={{ WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}
-    >
-      <Icon className="w-5 h-5 pointer-events-none" />
-    </button>
-  );
+  }) => {
+    const handlers = createPointerHandlers(() => handleDirectionPress(direction, x, y));
+    
+    return (
+      <button
+        {...handlers}
+        disabled={isDisabled}
+        className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all select-none ${
+          activeDirection === direction 
+            ? 'bg-primary/30 border-primary text-primary' 
+            : 'bg-secondary/50 border-border/50 text-foreground hover:bg-secondary'
+        } border disabled:opacity-30 ${className}`}
+        style={{ 
+          WebkitUserSelect: 'none', 
+          userSelect: 'none', 
+          WebkitTouchCallout: 'none',
+          touchAction: 'none'
+        }}
+      >
+        <Icon className="w-5 h-5 pointer-events-none" />
+      </button>
+    );
+  };
 
   const RotationButton = ({ 
     direction, 
@@ -195,41 +216,30 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
     icon: any;
     label: string;
     zDirection: number;
-  }) => (
-    <button
-      onPointerDown={(e) => { 
-        e.preventDefault(); 
-        e.stopPropagation();
-        (e.target as HTMLElement).setPointerCapture(e.pointerId);
-        handleRotationPress(direction, zDirection); 
-      }}
-      onPointerUp={(e) => { 
-        e.preventDefault(); 
-        e.stopPropagation();
-        (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-        handleRelease(); 
-      }}
-      onPointerLeave={(e) => { 
-        e.preventDefault(); 
-        handleRelease(); 
-      }}
-      onPointerCancel={(e) => { 
-        e.preventDefault(); 
-        handleRelease(); 
-      }}
-      onContextMenu={(e) => e.preventDefault()}
-      disabled={isDisabled}
-      className={`w-10 h-10 rounded-full flex flex-col items-center justify-center transition-all touch-none select-none ${
-        activeDirection === direction 
-          ? 'bg-primary/30 border-primary text-primary' 
-          : 'bg-secondary/50 border-border/50 text-foreground hover:bg-secondary'
-      } border disabled:opacity-30`}
-      style={{ WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}
-    >
-      <Icon className="w-3 h-3 pointer-events-none" />
-      <span className="text-[8px] pointer-events-none">{label}</span>
-    </button>
-  );
+  }) => {
+    const handlers = createPointerHandlers(() => handleRotationPress(direction, zDirection));
+    
+    return (
+      <button
+        {...handlers}
+        disabled={isDisabled}
+        className={`w-10 h-10 rounded-full flex flex-col items-center justify-center transition-all select-none ${
+          activeDirection === direction 
+            ? 'bg-primary/30 border-primary text-primary' 
+            : 'bg-secondary/50 border-border/50 text-foreground hover:bg-secondary'
+        } border disabled:opacity-30`}
+        style={{ 
+          WebkitUserSelect: 'none', 
+          userSelect: 'none', 
+          WebkitTouchCallout: 'none',
+          touchAction: 'none'
+        }}
+      >
+        <Icon className="w-3 h-3 pointer-events-none" />
+        <span className="text-[8px] pointer-events-none">{label}</span>
+      </button>
+    );
+  };
 
   return (
     <div className="cyber-card p-2 h-full flex flex-col">

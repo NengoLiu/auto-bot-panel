@@ -176,6 +176,8 @@ export class ROS2Connection {
         this.notifyListeners(true);
         // 重连后重新发送establish请求
         this.sendConnectionEstablishRequest(1);
+        // 重连后自动恢复之前的模式
+        this.restoreMode();
         resolve();
       });
 
@@ -189,6 +191,25 @@ export class ROS2Connection {
         this.startAutoReconnect();
       });
     });
+  }
+
+  // 恢复之前保存的操作模式
+  private restoreMode() {
+    try {
+      const savedMode = sessionStorage.getItem('control_current_mode');
+      if (savedMode) {
+        const mode_cmd = savedMode === 'manual' ? 1 : savedMode === 'semiauto' ? 2 : 0;
+        if (mode_cmd > 0) {
+          console.log('恢复操作模式:', savedMode);
+          // 延迟发送，确保连接稳定
+          setTimeout(() => {
+            this.sendMachineModeRequest(mode_cmd);
+          }, 500);
+        }
+      }
+    } catch (e) {
+      console.error('恢复模式失败:', e);
+    }
   }
 
   disconnect() {
