@@ -97,13 +97,12 @@ const Control = () => {
   };
 
   const handleModeChange = (mode: string) => {
+    // 如果半自动模式正在施工中，完全禁止切换到手动模式
+    if (mode === "manual" && manualLocked) {
+      return; // 直接阻止，不做任何处理
+    }
     if (!isConnected) {
       toast({ title: "未连接", description: "请先连接到ROS2服务器", variant: "destructive" });
-      return;
-    }
-    // 如果半自动模式正在施工中，禁止切换到手动模式
-    if (mode === "manual" && isSemiAutoRunning()) {
-      toast({ title: "模式锁定", description: "半自动施工中，请先停止施工", variant: "destructive" });
       return;
     }
     setCurrentMode(mode);
@@ -170,16 +169,7 @@ const Control = () => {
 
           {/* 手动模式 - 横屏两列布局 */}
           <TabsContent value="manual" className="flex-1 m-0 overflow-auto -webkit-overflow-scrolling-touch">
-            {/* 半自动施工中时显示锁定遮罩 */}
-            {manualLocked && (
-              <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center">
-                <div className="text-center space-y-2 p-4 rounded-lg border border-destructive/50 bg-destructive/10">
-                  <p className="text-sm font-semibold text-destructive">手动模式已锁定</p>
-                  <p className="text-[10px] text-muted-foreground">半自动施工中，请先切换到半自动模式停止施工</p>
-                </div>
-              </div>
-            )}
-            <div className={`min-h-full grid grid-cols-2 gap-2 ${manualLocked ? 'pointer-events-none opacity-50' : ''}`}>
+            <div className="min-h-full grid grid-cols-2 gap-2">
               {/* 左侧：底盘控制 + 电源 + 泵控 */}
               <div className="flex flex-col gap-2">
                 {/* 电源和泵控 - 水平排列 */}
