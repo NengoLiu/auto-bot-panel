@@ -100,13 +100,8 @@ export const ArmControlPanel = ({ isEnabled, isConnected }: ArmControlPanelProps
         </Button>
       </div>
 
-      {/* 3D Model - 上半部分 */}
-      <div className="flex-1 min-h-0">
-        <ArmModel3D yaw={yaw} roll={roll} updown={updown} />
-      </div>
-
-      {/* Control Sliders - 下半部分，三排纵向排列 */}
-      <div className="flex-shrink-0 flex flex-col gap-1.5 pt-2 border-t border-border/30">
+      {/* Control Sliders - 上半部分，三排纵向排列 */}
+      <div className="flex-shrink-0 flex flex-col gap-1.5 pb-2 border-b border-border/30">
         {/* Yaw: ±90° */}
         <div className="flex items-center gap-3">
           <span className="text-[10px] text-muted-foreground w-10 flex-shrink-0">YAW</span>
@@ -151,6 +146,11 @@ export const ArmControlPanel = ({ isEnabled, isConnected }: ArmControlPanelProps
           />
           <span className="text-[11px] font-medium text-primary w-12 text-right flex-shrink-0">{updown}cm</span>
         </div>
+      </div>
+
+      {/* 3D Model - 下半部分 */}
+      <div className="flex-1 min-h-0">
+        <ArmModel3D yaw={yaw} roll={roll} updown={updown} />
       </div>
     </div>
   );
