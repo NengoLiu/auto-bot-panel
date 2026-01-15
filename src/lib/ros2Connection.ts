@@ -1,4 +1,5 @@
 import ROSLIB from 'roslib';
+import { packetLogger } from './packetLogger';
 
 export interface ConnectionEstablishRequest {
   establish: number; // 0: 关机, 1: 开机
@@ -65,6 +66,15 @@ export interface MachineModeRequest {
 
 export interface MachineModeResponse {
   mode_ack: number; // 0/1
+}
+
+// 开发者归零服务
+export interface ZerosetRequest {
+  zero_set_cmd: number; // 0 或 1
+}
+
+export interface ZerosetResponse {
+  zero_set_ack: number; // 0 或 1
 }
 
 export class ROS2Connection {
@@ -239,12 +249,16 @@ export class ROS2Connection {
     });
 
     const request = new ROSLIB.ServiceRequest({ establish });
+    const logId = packetLogger.logSend('service', '/connection_establish', { establish });
+    
     service.callService(request, 
       (result: ConnectionEstablishResponse) => {
         console.log('连接建立响应:', result.establish_ack);
+        packetLogger.logResponse(logId, result, result.establish_ack === 1);
       },
       (error) => {
         console.error('连接建立请求失败:', error);
+        packetLogger.logResponse(logId, { error }, false);
       }
     );
   }
@@ -263,12 +277,16 @@ export class ROS2Connection {
     });
 
     const request = new ROSLIB.ServiceRequest({ motor_cmd });
+    const logId = packetLogger.logSend('service', '/chassis_enable', { motor_cmd });
+    
     service.callService(request,
       (result: ChassisEnableResponse) => {
         console.log('底盘使能响应:', result.motor_ack);
+        packetLogger.logResponse(logId, result, result.motor_ack === 1);
       },
       (error) => {
         console.error('底盘使能请求失败:', error);
+        packetLogger.logResponse(logId, { error }, false);
       }
     );
   }
@@ -287,12 +305,16 @@ export class ROS2Connection {
     });
 
     const request = new ROSLIB.ServiceRequest({ motor_cmd });
+    const logId = packetLogger.logSend('service', '/arm_enable', { motor_cmd });
+    
     service.callService(request,
       (result: ArmEnableResponse) => {
         console.log('机械臂使能响应:', result.arm_ack);
+        packetLogger.logResponse(logId, result, result.arm_ack === 1);
       },
       (error) => {
         console.error('机械臂使能请求失败:', error);
+        packetLogger.logResponse(logId, { error }, false);
       }
     );
   }
@@ -316,6 +338,7 @@ export class ROS2Connection {
 
     const rosMessage = new ROSLIB.Message(message);
     this.pumpTopic.publish(rosMessage);
+    packetLogger.logSend('topic', '/pump_control', message, false);
     console.log('泵控制消息已发布:', message);
   }
 
@@ -338,6 +361,7 @@ export class ROS2Connection {
 
     const rosMessage = new ROSLIB.Message(message);
     this.chassisTopic.publish(rosMessage);
+    packetLogger.logSend('topic', '/chassis_control', message, false);
     console.log('底盘控制消息已发布:', message);
   }
 
@@ -360,6 +384,7 @@ export class ROS2Connection {
 
     const rosMessage = new ROSLIB.Message(message);
     this.armTopic.publish(rosMessage);
+    packetLogger.logSend('topic', '/arm_control', message, false);
     console.log('机械臂控制消息已发布:', message);
   }
 
@@ -383,12 +408,16 @@ export class ROS2Connection {
       length,
       thickness
     });
+    const logId = packetLogger.logSend('service', '/semi_mode', { blade_roller, direction, width, length, thickness });
+    
     service.callService(request,
       (result: SemiModeResponse) => {
         console.log('半自动模式响应:', result.ack);
+        packetLogger.logResponse(logId, result, result.ack === 1);
       },
       (error) => {
         console.error('半自动模式请求失败:', error);
+        packetLogger.logResponse(logId, { error }, false);
       }
     );
   }
@@ -407,12 +436,16 @@ export class ROS2Connection {
     });
 
     const request = new ROSLIB.ServiceRequest({ stop_cmd });
+    const logId = packetLogger.logSend('service', '/stop', { stop_cmd });
+    
     service.callService(request,
       (result: StopResponse) => {
         console.log('停止指令响应:', result.stop_ack);
+        packetLogger.logResponse(logId, result, result.stop_ack === 1);
       },
       (error) => {
         console.error('停止指令请求失败:', error);
+        packetLogger.logResponse(logId, { error }, false);
       }
     );
   }
@@ -431,14 +464,51 @@ export class ROS2Connection {
     });
 
     const request = new ROSLIB.ServiceRequest({ mode_cmd });
+    const logId = packetLogger.logSend('service', '/machine_mode', { mode_cmd });
+    
     service.callService(request,
       (result: MachineModeResponse) => {
         console.log('机器模式响应:', result.mode_ack);
+        packetLogger.logResponse(logId, result, result.mode_ack === 1);
       },
       (error) => {
         console.error('机器模式请求失败:', error);
+        packetLogger.logResponse(logId, { error }, false);
       }
     );
+  }
+
+  // 开发者功能：机械臂归零
+  sendZerosetRequest(axis: 5 | 6 | 7, zero_set_cmd: number): Promise<ZerosetResponse> {
+    return new Promise((resolve, reject) => {
+      if (!this.ros) {
+        reject(new Error('未连接到 ROS2'));
+        return;
+      }
+
+      const serviceName = `/admin_zeroset_${axis}`;
+      const service = new ROSLIB.Service({
+        ros: this.ros,
+        name: serviceName,
+        serviceType: 'web_connect/srv/Zeroset'
+      });
+
+      const request = new ROSLIB.ServiceRequest({ zero_set_cmd });
+      const logId = packetLogger.logSend('service', serviceName, { zero_set_cmd });
+
+      service.callService(request,
+        (result: ZerosetResponse) => {
+          console.log(`归零服务 ${serviceName} 响应:`, result.zero_set_ack);
+          packetLogger.logResponse(logId, result, result.zero_set_ack === 1);
+          resolve(result);
+        },
+        (error) => {
+          console.error(`归零服务 ${serviceName} 请求失败:`, error);
+          packetLogger.logResponse(logId, { error }, false);
+          reject(error);
+        }
+      );
+    });
   }
 }
 
