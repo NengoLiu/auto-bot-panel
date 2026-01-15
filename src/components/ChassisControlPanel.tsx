@@ -249,78 +249,22 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
     },
   });
 
-  const DirectionButton = ({ 
-    direction, 
-    icon: Icon, 
-    x, 
-    y,
-    className = ""
-  }: { 
-    direction: string; 
-    icon: any; 
-    x: number; 
-    y: number;
-    className?: string;
-  }) => {
-    const handlers = createPointerHandlers(() => handleDirectionPress(direction, x, y));
-    
-    return (
-      <button
-        {...handlers}
-        disabled={isDisabled}
-        className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all select-none ${
-          activeDirection === direction 
-            ? 'bg-primary/30 border-primary text-primary' 
-            : 'bg-secondary/50 border-border/50 text-foreground hover:bg-secondary'
-        } border disabled:opacity-30 ${className}`}
-        style={{ 
-          WebkitUserSelect: 'none', 
-          userSelect: 'none', 
-          WebkitTouchCallout: 'none',
-          touchAction: 'none',
-          WebkitTapHighlightColor: 'transparent',
-        }}
-      >
-        <Icon className="w-5 h-5 pointer-events-none" />
-      </button>
-    );
+  // 按钮样式
+  const buttonStyle = { 
+    WebkitUserSelect: 'none' as const, 
+    userSelect: 'none' as const, 
+    WebkitTouchCallout: 'none' as const,
+    touchAction: 'none' as const,
+    WebkitTapHighlightColor: 'transparent',
   };
 
-  const RotationButton = ({ 
-    direction, 
-    icon: Icon,
-    label,
-    zDirection
-  }: { 
-    direction: string; 
-    icon: any;
-    label: string;
-    zDirection: number;
-  }) => {
-    const handlers = createPointerHandlers(() => handleRotationPress(direction, zDirection));
-    
-    return (
-      <button
-        {...handlers}
-        disabled={isDisabled}
-        className={`w-10 h-10 rounded-full flex flex-col items-center justify-center transition-all select-none ${
-          activeDirection === direction 
-            ? 'bg-primary/30 border-primary text-primary' 
-            : 'bg-secondary/50 border-border/50 text-foreground hover:bg-secondary'
-        } border disabled:opacity-30`}
-        style={{ 
-          WebkitUserSelect: 'none', 
-          userSelect: 'none', 
-          WebkitTouchCallout: 'none',
-          touchAction: 'none',
-          WebkitTapHighlightColor: 'transparent',
-        }}
-      >
-        <Icon className="w-3 h-3 pointer-events-none" />
-        <span className="text-[8px] pointer-events-none">{label}</span>
-      </button>
-    );
-  };
+  // 直接为每个按钮创建handlers，避免内部组件重新渲染问题
+  const forwardHandlers = createPointerHandlers(() => handleDirectionPress('forward', 0, 1));
+  const backwardHandlers = createPointerHandlers(() => handleDirectionPress('backward', 0, -1));
+  const leftHandlers = createPointerHandlers(() => handleDirectionPress('left', -1, 0));
+  const rightHandlers = createPointerHandlers(() => handleDirectionPress('right', 1, 0));
+  const ccwHandlers = createPointerHandlers(() => handleRotationPress('ccw', 1));
+  const cwHandlers = createPointerHandlers(() => handleRotationPress('cw', -1));
 
   return (
     <div className="cyber-card p-2 h-full flex flex-col">
@@ -333,20 +277,99 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
 
       {/* Direction Pad */}
       <div className="flex-1 flex flex-col items-center justify-center gap-1">
-        <DirectionButton direction="forward" icon={ChevronUp} x={0} y={1} />
+        {/* Forward */}
+        <button
+          {...forwardHandlers}
+          disabled={isDisabled}
+          className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all select-none ${
+            activeDirection === 'forward' 
+              ? 'bg-primary/30 border-primary text-primary' 
+              : 'bg-secondary/50 border-border/50 text-foreground hover:bg-secondary'
+          } border disabled:opacity-30`}
+          style={buttonStyle}
+        >
+          <ChevronUp className="w-5 h-5 pointer-events-none" />
+        </button>
+
         <div className="flex items-center gap-1">
-          <DirectionButton direction="left" icon={ChevronLeft} x={-1} y={0} />
+          {/* Left */}
+          <button
+            {...leftHandlers}
+            disabled={isDisabled}
+            className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all select-none ${
+              activeDirection === 'left' 
+                ? 'bg-primary/30 border-primary text-primary' 
+                : 'bg-secondary/50 border-border/50 text-foreground hover:bg-secondary'
+            } border disabled:opacity-30`}
+            style={buttonStyle}
+          >
+            <ChevronLeft className="w-5 h-5 pointer-events-none" />
+          </button>
+
           <div className="w-10 h-10 rounded-lg bg-secondary/30 border border-border/30 flex items-center justify-center">
             <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
           </div>
-          <DirectionButton direction="right" icon={ChevronRight} x={1} y={0} />
+
+          {/* Right */}
+          <button
+            {...rightHandlers}
+            disabled={isDisabled}
+            className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all select-none ${
+              activeDirection === 'right' 
+                ? 'bg-primary/30 border-primary text-primary' 
+                : 'bg-secondary/50 border-border/50 text-foreground hover:bg-secondary'
+            } border disabled:opacity-30`}
+            style={buttonStyle}
+          >
+            <ChevronRight className="w-5 h-5 pointer-events-none" />
+          </button>
         </div>
-        <DirectionButton direction="backward" icon={ChevronDown} x={0} y={-1} />
+
+        {/* Backward */}
+        <button
+          {...backwardHandlers}
+          disabled={isDisabled}
+          className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all select-none ${
+            activeDirection === 'backward' 
+              ? 'bg-primary/30 border-primary text-primary' 
+              : 'bg-secondary/50 border-border/50 text-foreground hover:bg-secondary'
+          } border disabled:opacity-30`}
+          style={buttonStyle}
+        >
+          <ChevronDown className="w-5 h-5 pointer-events-none" />
+        </button>
         
         {/* Rotation buttons */}
         <div className="flex items-center justify-between w-full mt-1 px-2">
-          <RotationButton direction="ccw" icon={RotateCcw} label="CCW" zDirection={1} />
-          <RotationButton direction="cw" icon={RotateCw} label="CW" zDirection={-1} />
+          {/* CCW */}
+          <button
+            {...ccwHandlers}
+            disabled={isDisabled}
+            className={`w-10 h-10 rounded-full flex flex-col items-center justify-center transition-all select-none ${
+              activeDirection === 'ccw' 
+                ? 'bg-primary/30 border-primary text-primary' 
+                : 'bg-secondary/50 border-border/50 text-foreground hover:bg-secondary'
+            } border disabled:opacity-30`}
+            style={buttonStyle}
+          >
+            <RotateCcw className="w-3 h-3 pointer-events-none" />
+            <span className="text-[8px] pointer-events-none">CCW</span>
+          </button>
+
+          {/* CW */}
+          <button
+            {...cwHandlers}
+            disabled={isDisabled}
+            className={`w-10 h-10 rounded-full flex flex-col items-center justify-center transition-all select-none ${
+              activeDirection === 'cw' 
+                ? 'bg-primary/30 border-primary text-primary' 
+                : 'bg-secondary/50 border-border/50 text-foreground hover:bg-secondary'
+            } border disabled:opacity-30`}
+            style={buttonStyle}
+          >
+            <RotateCw className="w-3 h-3 pointer-events-none" />
+            <span className="text-[8px] pointer-events-none">CW</span>
+          </button>
         </div>
       </div>
 
