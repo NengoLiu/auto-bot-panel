@@ -10,11 +10,6 @@ interface ChassisControlPanelProps {
 
 const CHASSIS_STORAGE_KEY = "chassis_control_state";
 
-// 安全超时时间（毫秒）- 如果超过这个时间没有收到释放事件，强制停止
-const SAFETY_TIMEOUT_MS = 500;
-// 心跳检测间隔（毫秒）- 定期检查按钮状态
-const HEARTBEAT_INTERVAL_MS = 100;
-
 const loadChassisState = () => {
   try {
     const saved = sessionStorage.getItem(CHASSIS_STORAGE_KEY);
@@ -35,11 +30,8 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
   const [speed, setSpeed] = useState(savedState.speed ?? 500);
   const [activeDirection, setActiveDirection] = useState<string | null>(null);
   
-  // 多重安全机制的引用
+  // 安全机制的引用
   const isPressingRef = useRef(false);
-  const lastPressTimeRef = useRef<number>(0);
-  const safetyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
   const activePointerIdRef = useRef<number | null>(null);
   const stopSentRef = useRef(false); // 防止重复发送停止指令
 
@@ -57,16 +49,6 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
 
   // 强制释放 - 发送停止指令（带防重复机制）
   const forceRelease = useCallback(() => {
-    // 清除所有定时器
-    if (safetyTimeoutRef.current) {
-      clearTimeout(safetyTimeoutRef.current);
-      safetyTimeoutRef.current = null;
-    }
-    if (heartbeatRef.current) {
-      clearInterval(heartbeatRef.current);
-      heartbeatRef.current = null;
-    }
-
     // 只有在之前是按下状态时才发送停止指令
     if (isPressingRef.current || activeDirection !== null) {
       isPressingRef.current = false;
@@ -92,80 +74,27 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
     }
   }, [isEnabled, isConnected, sendControl, activeDirection]);
 
-  // 启动安全超时定时器
-  const startSafetyTimeout = useCallback(() => {
-    // 清除旧的定时器
-    if (safetyTimeoutRef.current) {
-      clearTimeout(safetyTimeoutRef.current);
-    }
-    
-    // 设置新的安全超时
-    safetyTimeoutRef.current = setTimeout(() => {
-      console.warn('[ChassisControl] 安全超时触发，强制释放');
-      forceRelease();
-    }, SAFETY_TIMEOUT_MS);
-  }, [forceRelease]);
-
-  // 刷新安全超时（在持续按压时调用）
-  const refreshSafetyTimeout = useCallback(() => {
-    lastPressTimeRef.current = Date.now();
-    startSafetyTimeout();
-  }, [startSafetyTimeout]);
-
-  // 启动心跳检测
-  const startHeartbeat = useCallback(() => {
-    if (heartbeatRef.current) {
-      clearInterval(heartbeatRef.current);
-    }
-    
-    heartbeatRef.current = setInterval(() => {
-      // 如果超过安全时间没有刷新，强制释放
-      const elapsed = Date.now() - lastPressTimeRef.current;
-      if (isPressingRef.current && elapsed > SAFETY_TIMEOUT_MS) {
-        console.warn('[ChassisControl] 心跳检测超时，强制释放');
-        forceRelease();
-      }
-    }, HEARTBEAT_INTERVAL_MS);
-  }, [forceRelease]);
-
   const handleDirectionPress = useCallback((direction: string, x: number, y: number) => {
     if (!isEnabled || !isConnected) return;
     
     stopSentRef.current = false; // 重置停止标志
     isPressingRef.current = true;
-    lastPressTimeRef.current = Date.now();
     setActiveDirection(direction);
     
     const speedValue = speed / 1000;
     sendControl(x * speedValue, y * speedValue, 0);
-    
-    // 启动安全机制
-    startSafetyTimeout();
-    startHeartbeat();
-  }, [isEnabled, isConnected, speed, sendControl, startSafetyTimeout, startHeartbeat]);
+  }, [isEnabled, isConnected, speed, sendControl]);
 
   const handleRotationPress = useCallback((direction: string, zDirection: number) => {
     if (!isEnabled || !isConnected) return;
     
     stopSentRef.current = false; // 重置停止标志
     isPressingRef.current = true;
-    lastPressTimeRef.current = Date.now();
     setActiveDirection(direction);
     
     const zSpeed = 103.35 * (speed / 1000);
     sendControl(0, 0, zDirection * zSpeed);
-    
-    // 启动安全机制
-    startSafetyTimeout();
-    startHeartbeat();
-  }, [isEnabled, isConnected, speed, sendControl, startSafetyTimeout, startHeartbeat]);
-
-  // 处理持续按压时的心跳刷新（通过 pointermove 事件）
-  const handlePointerMove = useCallback(() => {
-    if (isPressingRef.current) {
-      refreshSafetyTimeout();
-    }
-  }, [refreshSafetyTimeout]);
+  }, [isEnabled, isConnected, speed, sendControl]);
 
   // 全局事件监听 - 多重备用释放机制
   useEffect(() => {
@@ -210,14 +139,6 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
       window.removeEventListener('blur', handleBlur);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       document.removeEventListener('pause', forceRelease);
-      
-      // 清理所有定时器
-      if (safetyTimeoutRef.current) {
-        clearTimeout(safetyTimeoutRef.current);
-      }
-      if (heartbeatRef.current) {
-        clearInterval(heartbeatRef.current);
-      }
     };
   }, [forceRelease, activeDirection]);
 
@@ -311,7 +232,7 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
         forceRelease();
       }
     },
-    onPointerMove: handlePointerMove, // 用于刷新安全超时
+    onPointerMove: () => {}, // 保留事件处理器以防止事件冒泡
     onLostPointerCapture: () => {
       console.log('[ChassisControl] 指针捕获丢失');
       forceRelease();
