@@ -10,6 +10,11 @@ interface ChassisControlPanelProps {
 
 const CHASSIS_STORAGE_KEY = "chassis_control_state";
 
+// 安全超时时间（毫秒）- 如果超过这个时间没有收到释放事件，强制停止
+const SAFETY_TIMEOUT_MS = 500;
+// 心跳检测间隔（毫秒）- 定期检查按钮状态
+const HEARTBEAT_INTERVAL_MS = 100;
+
 const loadChassisState = () => {
   try {
     const saved = sessionStorage.getItem(CHASSIS_STORAGE_KEY);
@@ -29,60 +34,145 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
   const savedState = loadChassisState();
   const [speed, setSpeed] = useState(savedState.speed ?? 500);
   const [activeDirection, setActiveDirection] = useState<string | null>(null);
-  const releaseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // 多重安全机制的引用
   const isPressingRef = useRef(false);
+  const lastPressTimeRef = useRef<number>(0);
+  const safetyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
+  const activePointerIdRef = useRef<number | null>(null);
+  const stopSentRef = useRef(false); // 防止重复发送停止指令
 
   // 持久化速度设置
   useEffect(() => {
     saveChassisState({ speed });
   }, [speed]);
 
+  // 发送控制指令
   const sendControl = useCallback((x: number, y: number, z: number) => {
     if (isEnabled && isConnected) {
       ros2Connection.publishChassisControl({ x_speed: x, y_speed: y, z_speed: z });
     }
   }, [isEnabled, isConnected]);
 
-  // 强制释放 - 发送停止指令
+  // 强制释放 - 发送停止指令（带防重复机制）
   const forceRelease = useCallback(() => {
-    isPressingRef.current = false;
-    setActiveDirection(null);
-    if (isEnabled && isConnected) {
-      sendControl(0, 0, 0);
+    // 清除所有定时器
+    if (safetyTimeoutRef.current) {
+      clearTimeout(safetyTimeoutRef.current);
+      safetyTimeoutRef.current = null;
     }
-    if (releaseTimeoutRef.current) {
-      clearTimeout(releaseTimeoutRef.current);
-      releaseTimeoutRef.current = null;
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current);
+      heartbeatRef.current = null;
     }
-  }, [isEnabled, isConnected, sendControl]);
+
+    // 只有在之前是按下状态时才发送停止指令
+    if (isPressingRef.current || activeDirection !== null) {
+      isPressingRef.current = false;
+      activePointerIdRef.current = null;
+      setActiveDirection(null);
+      
+      // 防止重复发送停止指令
+      if (!stopSentRef.current) {
+        stopSentRef.current = true;
+        if (isEnabled && isConnected) {
+          // 发送多次停止指令确保可靠性
+          sendControl(0, 0, 0);
+          // 延迟再发一次作为确认
+          setTimeout(() => {
+            sendControl(0, 0, 0);
+          }, 50);
+        }
+        // 重置防重复标志
+        setTimeout(() => {
+          stopSentRef.current = false;
+        }, 200);
+      }
+    }
+  }, [isEnabled, isConnected, sendControl, activeDirection]);
+
+  // 启动安全超时定时器
+  const startSafetyTimeout = useCallback(() => {
+    // 清除旧的定时器
+    if (safetyTimeoutRef.current) {
+      clearTimeout(safetyTimeoutRef.current);
+    }
+    
+    // 设置新的安全超时
+    safetyTimeoutRef.current = setTimeout(() => {
+      console.warn('[ChassisControl] 安全超时触发，强制释放');
+      forceRelease();
+    }, SAFETY_TIMEOUT_MS);
+  }, [forceRelease]);
+
+  // 刷新安全超时（在持续按压时调用）
+  const refreshSafetyTimeout = useCallback(() => {
+    lastPressTimeRef.current = Date.now();
+    startSafetyTimeout();
+  }, [startSafetyTimeout]);
+
+  // 启动心跳检测
+  const startHeartbeat = useCallback(() => {
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current);
+    }
+    
+    heartbeatRef.current = setInterval(() => {
+      // 如果超过安全时间没有刷新，强制释放
+      const elapsed = Date.now() - lastPressTimeRef.current;
+      if (isPressingRef.current && elapsed > SAFETY_TIMEOUT_MS) {
+        console.warn('[ChassisControl] 心跳检测超时，强制释放');
+        forceRelease();
+      }
+    }, HEARTBEAT_INTERVAL_MS);
+  }, [forceRelease]);
 
   const handleDirectionPress = useCallback((direction: string, x: number, y: number) => {
     if (!isEnabled || !isConnected) return;
     
+    stopSentRef.current = false; // 重置停止标志
     isPressingRef.current = true;
+    lastPressTimeRef.current = Date.now();
     setActiveDirection(direction);
+    
     const speedValue = speed / 1000;
     sendControl(x * speedValue, y * speedValue, 0);
-  }, [isEnabled, isConnected, speed, sendControl]);
+    
+    // 启动安全机制
+    startSafetyTimeout();
+    startHeartbeat();
+  }, [isEnabled, isConnected, speed, sendControl, startSafetyTimeout, startHeartbeat]);
 
   const handleRotationPress = useCallback((direction: string, zDirection: number) => {
     if (!isEnabled || !isConnected) return;
     
+    stopSentRef.current = false; // 重置停止标志
     isPressingRef.current = true;
+    lastPressTimeRef.current = Date.now();
     setActiveDirection(direction);
-    // 旋转速度减半：103.35 °/s @ 1m/s
+    
     const zSpeed = 103.35 * (speed / 1000);
     sendControl(0, 0, zDirection * zSpeed);
-  }, [isEnabled, isConnected, speed, sendControl]);
+    
+    // 启动安全机制
+    startSafetyTimeout();
+    startHeartbeat();
+  }, [isEnabled, isConnected, speed, sendControl, startSafetyTimeout, startHeartbeat]);
 
-  const handleRelease = useCallback(() => {
-    forceRelease();
-  }, [forceRelease]);
+  // 处理持续按压时的心跳刷新（通过 pointermove 事件）
+  const handlePointerMove = useCallback(() => {
+    if (isPressingRef.current) {
+      refreshSafetyTimeout();
+    }
+  }, [refreshSafetyTimeout]);
 
-  // 全局事件监听 - 备用释放机制
+  // 全局事件监听 - 多重备用释放机制
   useEffect(() => {
-    const globalRelease = () => {
-      if (isPressingRef.current) {
+    const globalRelease = (e?: Event) => {
+      // 检查是否需要释放
+      if (isPressingRef.current || activeDirection !== null) {
+        console.log('[ChassisControl] 全局释放触发', e?.type);
         forceRelease();
       }
     };
@@ -90,33 +180,63 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
     // 页面可见性变化时释放
     const handleVisibilityChange = () => {
       if (document.hidden) {
+        console.log('[ChassisControl] 页面隐藏，释放控制');
         forceRelease();
       }
     };
 
-    // 全局触摸/鼠标释放监听
-    window.addEventListener('touchend', globalRelease, { passive: true });
-    window.addEventListener('touchcancel', globalRelease, { passive: true });
-    window.addEventListener('mouseup', globalRelease, { passive: true });
-    window.addEventListener('blur', globalRelease);
+    // 窗口失焦时释放
+    const handleBlur = () => {
+      console.log('[ChassisControl] 窗口失焦，释放控制');
+      forceRelease();
+    };
+
+    // 监听所有可能的释放事件
+    const events = ['touchend', 'touchcancel', 'mouseup', 'pointerup', 'pointercancel'];
+    events.forEach(event => {
+      window.addEventListener(event, globalRelease, { passive: true, capture: true });
+    });
+    
+    window.addEventListener('blur', handleBlur);
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // 安卓特有：监听页面暂停事件
+    document.addEventListener('pause', forceRelease);
 
     return () => {
-      window.removeEventListener('touchend', globalRelease);
-      window.removeEventListener('touchcancel', globalRelease);
-      window.removeEventListener('mouseup', globalRelease);
-      window.removeEventListener('blur', globalRelease);
+      events.forEach(event => {
+        window.removeEventListener(event, globalRelease, { capture: true });
+      });
+      window.removeEventListener('blur', handleBlur);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      if (releaseTimeoutRef.current) {
-        clearTimeout(releaseTimeoutRef.current);
+      document.removeEventListener('pause', forceRelease);
+      
+      // 清理所有定时器
+      if (safetyTimeoutRef.current) {
+        clearTimeout(safetyTimeoutRef.current);
+      }
+      if (heartbeatRef.current) {
+        clearInterval(heartbeatRef.current);
       }
     };
-  }, [forceRelease]);
+  }, [forceRelease, activeDirection]);
+
+  // 组件卸载时确保释放
+  useEffect(() => {
+    return () => {
+      if (isPressingRef.current) {
+        if (isEnabled && isConnected) {
+          ros2Connection.publishChassisControl({ x_speed: 0, y_speed: 0, z_speed: 0 });
+        }
+      }
+    };
+  }, [isEnabled, isConnected]);
 
   const adjustSpeed = (delta: number) => {
     setSpeed((prev) => Math.min(Math.max(prev + delta, 100), 2000));
   };
 
+  // 键盘控制
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isEnabled || !isConnected) return;
@@ -127,47 +247,85 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
         case 'd': handleDirectionPress('right', 1, 0); break;
       }
     };
-    const handleKeyUp = () => handleRelease();
+    const handleKeyUp = () => forceRelease();
+    
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [isEnabled, isConnected, speed, handleDirectionPress, handleRelease]);
+  }, [isEnabled, isConnected, handleDirectionPress, forceRelease]);
 
   const isDisabled = !isEnabled || !isConnected;
 
-  // 增强的指针事件处理
+  // 增强的指针事件处理 - 使用原生事件和多重保障
   const createPointerHandlers = (
     onPress: () => void
   ) => ({
     onPointerDown: (e: React.PointerEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      // 使用 currentTarget 确保正确捕获
+      
+      // 如果已经有活动的指针，先释放
+      if (activePointerIdRef.current !== null && activePointerIdRef.current !== e.pointerId) {
+        forceRelease();
+      }
+      
+      activePointerIdRef.current = e.pointerId;
       const target = e.currentTarget as HTMLElement;
-      target.setPointerCapture(e.pointerId);
+      
+      try {
+        target.setPointerCapture(e.pointerId);
+      } catch (err) {
+        console.warn('[ChassisControl] 设置指针捕获失败', err);
+      }
+      
       onPress();
     },
     onPointerUp: (e: React.PointerEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      
       const target = e.currentTarget as HTMLElement;
-      if (target.hasPointerCapture(e.pointerId)) {
-        target.releasePointerCapture(e.pointerId);
+      try {
+        if (target.hasPointerCapture(e.pointerId)) {
+          target.releasePointerCapture(e.pointerId);
+        }
+      } catch (err) {
+        console.warn('[ChassisControl] 释放指针捕获失败', err);
       }
-      handleRelease();
+      
+      forceRelease();
     },
     onPointerCancel: (e: React.PointerEvent) => {
       e.preventDefault();
-      handleRelease();
+      console.log('[ChassisControl] pointercancel 触发');
+      forceRelease();
     },
+    onPointerLeave: (e: React.PointerEvent) => {
+      // 只有在没有指针捕获的情况下才释放
+      const target = e.currentTarget as HTMLElement;
+      if (!target.hasPointerCapture(e.pointerId)) {
+        forceRelease();
+      }
+    },
+    onPointerMove: handlePointerMove, // 用于刷新安全超时
     onLostPointerCapture: () => {
-      // 当指针捕获丢失时也释放
-      handleRelease();
+      console.log('[ChassisControl] 指针捕获丢失');
+      forceRelease();
     },
     onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
+    // 添加原生触摸事件作为后备
+    onTouchEnd: (e: React.TouchEvent) => {
+      e.preventDefault();
+      forceRelease();
+    },
+    onTouchCancel: (e: React.TouchEvent) => {
+      e.preventDefault();
+      forceRelease();
+    },
   });
 
   const DirectionButton = ({ 
@@ -198,7 +356,8 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
           WebkitUserSelect: 'none', 
           userSelect: 'none', 
           WebkitTouchCallout: 'none',
-          touchAction: 'none'
+          touchAction: 'none',
+          WebkitTapHighlightColor: 'transparent',
         }}
       >
         <Icon className="w-5 h-5 pointer-events-none" />
@@ -232,7 +391,8 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
           WebkitUserSelect: 'none', 
           userSelect: 'none', 
           WebkitTouchCallout: 'none',
-          touchAction: 'none'
+          touchAction: 'none',
+          WebkitTapHighlightColor: 'transparent',
         }}
       >
         <Icon className="w-3 h-3 pointer-events-none" />
@@ -250,7 +410,7 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
         <span className="text-[8px] text-muted-foreground">NAV</span>
       </div>
 
-      {/* Direction Pad - 更紧凑 */}
+      {/* Direction Pad */}
       <div className="flex-1 flex flex-col items-center justify-center gap-1">
         <DirectionButton direction="forward" icon={ChevronUp} x={0} y={1} />
         <div className="flex items-center gap-1">
@@ -269,7 +429,7 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
         </div>
       </div>
 
-      {/* Speed Control - 更紧凑 */}
+      {/* Speed Control */}
       <div className="cyber-border rounded-lg p-2 mt-1">
         <div className="flex items-center justify-between gap-2">
           <Button
