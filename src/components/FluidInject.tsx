@@ -14,16 +14,19 @@ export const FluidInject = ({ isConnected }: FluidInjectProps) => {
   const [isEnabled, setIsEnabled] = useState(false); // 泵使能状态
   const [pumpSpeed, setPumpSpeed] = useState(50); // 泵速度 rpm
   const [pumpFluid, setPumpFluid] = useState(6); // 泵流量 ml/s
-  const [pumpDirection, setPumpDirection] = useState(0); // 0: 从桶里抽, 1: 往桶里吸
+  const [pumpDirection, setPumpDirection] = useState<1 | -1>(1); // 1: 抽取, -1: 倒吸
   const [isLoading, setIsLoading] = useState(false);
+
+  // 计算带方向的值（正值=抽取，负值=倒吸）
+  const getDirectedValue = (value: number) => value * pumpDirection;
 
   // 发送pump_control topic数据
   const sendPumpControlData = () => {
     if (isConnected && isEnabled) {
       ros2Connection.publishPumpControl({
         pump_switch: 1,
-        pump_speed: pumpSpeed,
-        pump_flud: pumpFluid
+        pump_speed: getDirectedValue(pumpSpeed),
+        pump_flud: getDirectedValue(pumpFluid)
       });
     }
   };
@@ -38,17 +41,18 @@ export const FluidInject = ({ isConnected }: FluidInjectProps) => {
     setIsLoading(true);
     try {
       if (!isEnabled) {
-        // 使能操作
-        const response = await ros2Connection.sendPumpEnableRequest(1, pumpSpeed, pumpDirection);
+        // 使能操作：发送带方向的速度值
+        const directedSpeed = getDirectedValue(pumpSpeed);
+        const response = await ros2Connection.sendPumpEnableRequest(1, directedSpeed);
         if (response.pump_ack === 1) {
           setIsEnabled(true);
           toast.success("泵使能成功");
-          // 使能成功后，立即发送一次当前的泵流速和流量
+          // 使能成功后，立即发送一次当前的泵流速和流量（带方向）
           setTimeout(() => {
             ros2Connection.publishPumpControl({
               pump_switch: 1,
-              pump_speed: pumpSpeed,
-              pump_flud: pumpFluid
+              pump_speed: getDirectedValue(pumpSpeed),
+              pump_flud: getDirectedValue(pumpFluid)
             });
           }, 100);
         } else {
@@ -56,11 +60,11 @@ export const FluidInject = ({ isConnected }: FluidInjectProps) => {
         }
       } else {
         // 失能操作
-        const response = await ros2Connection.sendPumpEnableRequest(0, pumpSpeed, pumpDirection);
+        const response = await ros2Connection.sendPumpEnableRequest(0, 0);
         if (response.pump_ack === 1) {
           setIsEnabled(false);
           toast.success("泵已失能");
-          // 发送关闭指令
+          // 发送关闭指令（保留UI数值，发送全零停止）
           ros2Connection.publishPumpControl({
             pump_switch: 0,
             pump_speed: 0,
@@ -81,12 +85,12 @@ export const FluidInject = ({ isConnected }: FluidInjectProps) => {
   // 处理泵速度变化
   const handleSpeedChange = (value: number[]) => {
     setPumpSpeed(value[0]);
-    // 只有使能后才发送数据
+    // 只有使能后才发送数据（带方向）
     if (isEnabled && isConnected) {
       ros2Connection.publishPumpControl({
         pump_switch: 1,
-        pump_speed: value[0],
-        pump_flud: pumpFluid
+        pump_speed: getDirectedValue(value[0]),
+        pump_flud: getDirectedValue(pumpFluid)
       });
     }
   };
@@ -94,19 +98,28 @@ export const FluidInject = ({ isConnected }: FluidInjectProps) => {
   // 处理泵流量变化
   const handleFluidChange = (value: number[]) => {
     setPumpFluid(value[0]);
-    // 只有使能后才发送数据
+    // 只有使能后才发送数据（带方向）
     if (isEnabled && isConnected) {
       ros2Connection.publishPumpControl({
         pump_switch: 1,
-        pump_speed: pumpSpeed,
-        pump_flud: value[0]
+        pump_speed: getDirectedValue(pumpSpeed),
+        pump_flud: getDirectedValue(value[0])
       });
     }
   };
 
   // 处理方向切换
   const handleDirectionChange = (checked: boolean) => {
-    setPumpDirection(checked ? 1 : 0);
+    const newDirection: 1 | -1 = checked ? -1 : 1;
+    setPumpDirection(newDirection);
+    // 如果已使能，方向变化时也要重新发送数据
+    if (isEnabled && isConnected) {
+      ros2Connection.publishPumpControl({
+        pump_switch: 1,
+        pump_speed: pumpSpeed * newDirection,
+        pump_flud: pumpFluid * newDirection
+      });
+    }
   };
 
   return (
@@ -134,14 +147,14 @@ export const FluidInject = ({ isConnected }: FluidInjectProps) => {
       <div className="flex items-center justify-between mb-2 py-1 border-b border-border/30">
         <span className="text-[9px] text-muted-foreground">方向</span>
         <div className="flex items-center gap-1">
-          <span className={`text-[8px] ${pumpDirection === 0 ? 'text-primary' : 'text-muted-foreground'}`}>抽出</span>
+          <span className={`text-[8px] ${pumpDirection === 1 ? 'text-primary' : 'text-muted-foreground'}`}>抽取</span>
           <Switch
-            checked={pumpDirection === 1}
+            checked={pumpDirection === -1}
             onCheckedChange={handleDirectionChange}
-            disabled={!isConnected || isEnabled}
+            disabled={!isConnected}
             className="scale-50"
           />
-          <span className={`text-[8px] ${pumpDirection === 1 ? 'text-primary' : 'text-muted-foreground'}`}>吸入</span>
+          <span className={`text-[8px] ${pumpDirection === -1 ? 'text-primary' : 'text-muted-foreground'}`}>倒吸</span>
         </div>
       </div>
 
