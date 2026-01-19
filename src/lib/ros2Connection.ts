@@ -68,6 +68,17 @@ export interface MachineModeResponse {
   mode_ack: number; // 0/1
 }
 
+// 泵使能服务
+export interface PumpEnableRequest {
+  pump_cmd: number; // 0: 未使能, 1: 使能, 2: 紧急故障
+  pump_speed: number; // float32 正值 (rpm)
+  pump_direction: number; // 0: 从桶里抽, 1: 往桶里吸
+}
+
+export interface PumpEnableResponse {
+  pump_ack: number; // 0 或 1
+}
+
 // 开发者归零服务
 export interface ZerosetRequest {
   zero_set_cmd: number; // 0 或 1
@@ -504,6 +515,38 @@ export class ROS2Connection {
         },
         (error) => {
           console.error(`归零服务 ${serviceName} 请求失败:`, error);
+          packetLogger.logResponse(logId, { error }, false);
+          reject(error);
+        }
+      );
+    });
+  }
+
+  // 泵使能服务
+  sendPumpEnableRequest(pump_cmd: number, pump_speed: number, pump_direction: number): Promise<PumpEnableResponse> {
+    return new Promise((resolve, reject) => {
+      if (!this.ros) {
+        reject(new Error('未连接到 ROS2'));
+        return;
+      }
+
+      const service = new ROSLIB.Service({
+        ros: this.ros,
+        name: '/pump_enable',
+        serviceType: 'web_connect/srv/Pumpkin'
+      });
+
+      const request = new ROSLIB.ServiceRequest({ pump_cmd, pump_speed, pump_direction });
+      const logId = packetLogger.logSend('service', '/pump_enable', { pump_cmd, pump_speed, pump_direction });
+
+      service.callService(request,
+        (result: PumpEnableResponse) => {
+          console.log('泵使能响应:', result.pump_ack);
+          packetLogger.logResponse(logId, result, result.pump_ack === 1);
+          resolve(result);
+        },
+        (error) => {
+          console.error('泵使能请求失败:', error);
           packetLogger.logResponse(logId, { error }, false);
           reject(error);
         }
