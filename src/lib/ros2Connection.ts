@@ -71,8 +71,7 @@ export interface MachineModeResponse {
 // 泵使能服务
 export interface PumpEnableRequest {
   pump_cmd: number; // 0: 未使能, 1: 使能, 2: 紧急故障
-  pump_speed: number; // float32 正值 (rpm)
-  pump_direction: number; // 0: 从桶里抽, 1: 往桶里吸
+  pump_speed: number; // float32 带符号值，>0 抽取，<0 倒吸
 }
 
 export interface PumpEnableResponse {
@@ -523,7 +522,7 @@ export class ROS2Connection {
   }
 
   // 泵使能服务
-  sendPumpEnableRequest(pump_cmd: number, pump_speed: number, pump_direction: number): Promise<PumpEnableResponse> {
+  sendPumpEnableRequest(pump_cmd: number, pump_speed: number): Promise<PumpEnableResponse> {
     return new Promise((resolve, reject) => {
       if (!this.ros) {
         reject(new Error('未连接到 ROS2'));
@@ -532,12 +531,12 @@ export class ROS2Connection {
 
       const service = new ROSLIB.Service({
         ros: this.ros,
-        name: '/pump_enable',
+        name: '/pumpkin_enable',
         serviceType: 'web_connect/srv/Pumpkin'
       });
 
-      const request = new ROSLIB.ServiceRequest({ pump_cmd, pump_speed, pump_direction });
-      const logId = packetLogger.logSend('service', '/pump_enable', { pump_cmd, pump_speed, pump_direction });
+      const request = new ROSLIB.ServiceRequest({ pump_cmd, pump_speed });
+      const logId = packetLogger.logSend('service', '/pumpkin_enable', { pump_cmd, pump_speed });
 
       service.callService(request,
         (result: PumpEnableResponse) => {
