@@ -1,27 +1,112 @@
 import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { Droplets } from "lucide-react";
+import { Droplets, Power } from "lucide-react";
 import { ros2Connection } from "@/lib/ros2Connection";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface FluidInjectProps {
   isConnected: boolean;
 }
 
 export const FluidInject = ({ isConnected }: FluidInjectProps) => {
-  const [isActive, setIsActive] = useState(false);
-  const [flowRate, setFlowRate] = useState(50);
+  const [isEnabled, setIsEnabled] = useState(false); // 泵使能状态
+  const [pumpSpeed, setPumpSpeed] = useState(50); // 泵速度 rpm
+  const [pumpFluid, setPumpFluid] = useState(6); // 泵流量 ml/s
+  const [pumpDirection, setPumpDirection] = useState(0); // 0: 从桶里抽, 1: 往桶里吸
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleToggle = (checked: boolean) => {
-    setIsActive(checked);
-    if (isConnected) {
-      ros2Connection.publishPumpControl({ pump_switch: checked ? 1 : 0, pump_speed: flowRate * 2, pump_flud: 6 });
+  // 发送pump_control topic数据
+  const sendPumpControlData = () => {
+    if (isConnected && isEnabled) {
+      ros2Connection.publishPumpControl({
+        pump_switch: 1,
+        pump_speed: pumpSpeed,
+        pump_flud: pumpFluid
+      });
     }
   };
 
-  const handleFlowChange = (value: number[]) => {
-    setFlowRate(value[0]);
-    // Could send flow rate to ROS2 if needed
+  // 处理使能/失能切换
+  const handleEnableToggle = async () => {
+    if (!isConnected) {
+      toast.error("请先连接ROS2");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      if (!isEnabled) {
+        // 使能操作
+        const response = await ros2Connection.sendPumpEnableRequest(1, pumpSpeed, pumpDirection);
+        if (response.pump_ack === 1) {
+          setIsEnabled(true);
+          toast.success("泵使能成功");
+          // 使能成功后，立即发送一次当前的泵流速和流量
+          setTimeout(() => {
+            ros2Connection.publishPumpControl({
+              pump_switch: 1,
+              pump_speed: pumpSpeed,
+              pump_flud: pumpFluid
+            });
+          }, 100);
+        } else {
+          toast.error("泵使能失败");
+        }
+      } else {
+        // 失能操作
+        const response = await ros2Connection.sendPumpEnableRequest(0, pumpSpeed, pumpDirection);
+        if (response.pump_ack === 1) {
+          setIsEnabled(false);
+          toast.success("泵已失能");
+          // 发送关闭指令
+          ros2Connection.publishPumpControl({
+            pump_switch: 0,
+            pump_speed: 0,
+            pump_flud: 0
+          });
+        } else {
+          toast.error("泵失能失败");
+        }
+      }
+    } catch (error) {
+      console.error("泵使能操作失败:", error);
+      toast.error("泵使能操作失败");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 处理泵速度变化
+  const handleSpeedChange = (value: number[]) => {
+    setPumpSpeed(value[0]);
+    // 只有使能后才发送数据
+    if (isEnabled && isConnected) {
+      ros2Connection.publishPumpControl({
+        pump_switch: 1,
+        pump_speed: value[0],
+        pump_flud: pumpFluid
+      });
+    }
+  };
+
+  // 处理泵流量变化
+  const handleFluidChange = (value: number[]) => {
+    setPumpFluid(value[0]);
+    // 只有使能后才发送数据
+    if (isEnabled && isConnected) {
+      ros2Connection.publishPumpControl({
+        pump_switch: 1,
+        pump_speed: pumpSpeed,
+        pump_flud: value[0]
+      });
+    }
+  };
+
+  // 处理方向切换
+  const handleDirectionChange = (checked: boolean) => {
+    setPumpDirection(checked ? 1 : 0);
   };
 
   return (
@@ -33,30 +118,73 @@ export const FluidInject = ({ isConnected }: FluidInjectProps) => {
           <span className="text-[10px] font-semibold text-destructive">泵控</span>
           <span className="text-[8px] text-muted-foreground">PUMP</span>
         </div>
-        <Switch
-          checked={isActive}
-          onCheckedChange={handleToggle}
-          disabled={!isConnected}
-          className="scale-75"
-        />
+        <Button
+          variant={isEnabled ? "destructive" : "default"}
+          size="sm"
+          onClick={handleEnableToggle}
+          disabled={!isConnected || isLoading}
+          className="h-5 px-2 text-[9px] gap-1"
+        >
+          <Power className="w-2.5 h-2.5" />
+          {isLoading ? "..." : isEnabled ? "失能" : "使能"}
+        </Button>
       </div>
 
-      {/* Flow Rate Slider */}
-      <div className="space-y-1">
+      {/* Direction Toggle */}
+      <div className="flex items-center justify-between mb-2 py-1 border-b border-border/30">
+        <span className="text-[9px] text-muted-foreground">方向</span>
+        <div className="flex items-center gap-1">
+          <span className={`text-[8px] ${pumpDirection === 0 ? 'text-primary' : 'text-muted-foreground'}`}>抽出</span>
+          <Switch
+            checked={pumpDirection === 1}
+            onCheckedChange={handleDirectionChange}
+            disabled={!isConnected || isEnabled}
+            className="scale-50"
+          />
+          <span className={`text-[8px] ${pumpDirection === 1 ? 'text-primary' : 'text-muted-foreground'}`}>吸入</span>
+        </div>
+      </div>
+
+      {/* Pump Speed Slider */}
+      <div className="space-y-1 mb-2">
         <div className="flex justify-between text-[9px] text-muted-foreground">
-          <span>流速</span>
-          <span>{flowRate}%</span>
+          <span>速度</span>
+          <span className={isEnabled ? 'text-primary' : ''}>{pumpSpeed} rpm</span>
         </div>
         <Slider
-          value={[flowRate]}
-          onValueChange={handleFlowChange}
+          value={[pumpSpeed]}
+          onValueChange={handleSpeedChange}
           min={0}
-          max={100}
+          max={200}
           step={1}
-          disabled={!isConnected || !isActive}
+          disabled={!isConnected}
           className="w-full"
         />
       </div>
+
+      {/* Pump Fluid Slider */}
+      <div className="space-y-1">
+        <div className="flex justify-between text-[9px] text-muted-foreground">
+          <span>流量</span>
+          <span className={isEnabled ? 'text-primary' : ''}>{pumpFluid} ml/s</span>
+        </div>
+        <Slider
+          value={[pumpFluid]}
+          onValueChange={handleFluidChange}
+          min={0}
+          max={12}
+          step={0.5}
+          disabled={!isConnected}
+          className="w-full"
+        />
+      </div>
+
+      {/* Status indicator */}
+      {!isEnabled && isConnected && (
+        <div className="mt-2 text-center">
+          <span className="text-[8px] text-muted-foreground/60">未使能，调整数值不会发送</span>
+        </div>
+      )}
     </div>
   );
 };
