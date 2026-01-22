@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from 'vite-plugin-pwa';
+import legacy from '@vitejs/plugin-legacy';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -10,9 +11,19 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  // 兼容 Android 10 及更低版本的 WebView
+  build: {
+    target: 'es2015',
+  },
   plugins: [
     react(), 
     mode === "development" && componentTagger(),
+    // Legacy 插件支持旧版浏览器 (Android 10 WebView)
+    legacy({
+      targets: ['Android >= 5', 'Chrome >= 49', 'iOS >= 10'],
+      additionalLegacyPolyfills: ['regenerator-runtime/runtime'],
+      modernPolyfills: true,
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icon-192.png', 'icon-512.png'],

@@ -138,7 +138,7 @@ const Admin = () => {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-background overflow-hidden safe-area-inset">
+    <div className="flex flex-col h-screen bg-background overflow-hidden safe-area-inset">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-border/50 bg-card/50">
         <div className="flex items-center gap-2">
