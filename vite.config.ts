@@ -11,9 +11,21 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
-  // 兼容 Android 10 及更低版本的 WebView
   build: {
-    target: 'es2015',
+    // 让 legacy 插件控制 target，避免警告
+    cssTarget: 'chrome61',
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        // 手动分割大型依赖库
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-three': ['three', '@react-three/fiber', '@react-three/drei'],
+          'vendor-ui': ['@radix-ui/react-tabs', '@radix-ui/react-dialog', '@radix-ui/react-tooltip'],
+          'vendor-charts': ['recharts'],
+        },
+      },
+    },
   },
   plugins: [
     react(), 
