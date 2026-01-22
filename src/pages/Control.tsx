@@ -132,7 +132,7 @@ const Control = () => {
   const isModeActive = currentMode !== null;
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-background overflow-hidden safe-area-inset">
+    <div className="flex flex-col h-screen bg-background overflow-hidden safe-area-inset">
       <ControlHeader onMenuClick={() => setSidebarOpen(true)} isConnected={isConnected} />
       <ControlSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
