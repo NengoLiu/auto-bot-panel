@@ -95,6 +95,9 @@ export class ROS2Connection {
   private reconnectTimer: ReturnType<typeof setInterval> | null = null;
   private lastUrl: string | null = null;
   private connectionListeners: Set<(connected: boolean) => void> = new Set();
+  private isReconnecting: boolean = false;
+  private connectionId: number = 0; // 用于追踪连接实例，防止事件处理混乱
+  private lastConnectionVerified: boolean = false; // 标记连接是否已验证
 
   // 添加连接状态监听器
   addConnectionListener(listener: (connected: boolean) => void) {
@@ -106,27 +109,134 @@ export class ROS2Connection {
     this.connectionListeners.forEach(listener => listener(connected));
   }
 
+  // 彻底关闭现有连接，确保资源释放
+  private closeExistingConnection() {
+    console.log('关闭现有连接...');
+    
+    // 清理 Topics
+    if (this.pumpTopic) {
+      try { this.pumpTopic.unadvertise(); } catch {}
+      this.pumpTopic = null;
+    }
+    if (this.chassisTopic) {
+      try { this.chassisTopic.unadvertise(); } catch {}
+      this.chassisTopic = null;
+    }
+    if (this.armTopic) {
+      try { this.armTopic.unadvertise(); } catch {}
+      this.armTopic = null;
+    }
+    
+    // 关闭 ROS 连接
+    if (this.ros) {
+      try {
+        // 移除所有事件监听器，防止触发 close 事件导致重连
+        this.ros.removeAllListeners();
+        this.ros.close();
+      } catch (e) {
+        console.warn('关闭旧连接时出错:', e);
+      }
+      this.ros = null;
+    }
+    
+    this.lastConnectionVerified = false;
+  }
+
+  // 验证连接：发送 establish 请求并等待响应
+  private verifyConnection(): Promise<boolean> {
+    return new Promise((resolve) => {
+      if (!this.ros || !this.ros.isConnected) {
+        resolve(false);
+        return;
+      }
+
+      const service = new ROSLIB.Service({
+        ros: this.ros,
+        name: '/connection_establish',
+        serviceType: 'web_connect/srv/Establish'
+      });
+
+      const request = new ROSLIB.ServiceRequest({ establish: 1 });
+      const logId = packetLogger.logSend('service', '/connection_establish', { establish: 1 });
+      
+      // 5秒超时
+      const timeout = setTimeout(() => {
+        console.warn('连接验证超时');
+        packetLogger.logResponse(logId, { error: 'timeout' }, false);
+        resolve(false);
+      }, 5000);
+
+      service.callService(request, 
+        (result: ConnectionEstablishResponse) => {
+          clearTimeout(timeout);
+          const verified = result.establish_ack === 1;
+          console.log('连接验证结果:', verified ? '成功' : '失败');
+          packetLogger.logResponse(logId, result, verified);
+          resolve(verified);
+        },
+        (error) => {
+          clearTimeout(timeout);
+          console.error('连接验证失败:', error);
+          packetLogger.logResponse(logId, { error }, false);
+          resolve(false);
+        }
+      );
+    });
+  }
+
   connect(url: string): Promise<void> {
     return new Promise((resolve, reject) => {
       console.log('正在连接到 ROS2 WebSocket 服务器:', url);
+      
+      // 先彻底关闭现有连接
+      this.closeExistingConnection();
+      this.stopAutoReconnect();
+      
       this.lastUrl = url;
+      this.connectionId++;
+      const currentConnectionId = this.connectionId;
       
       const timeout = setTimeout(() => {
-        if (this.ros) this.ros.close();
+        if (this.ros && this.connectionId === currentConnectionId) {
+          this.closeExistingConnection();
+        }
         reject(new Error('连接超时：请检查服务器、IP/端口和网络'));
       }, 10000);
 
       this.ros = new ROSLIB.Ros({ url });
 
-      this.ros.on('connection', () => {
+      this.ros.on('connection', async () => {
+        // 检查这是否仍是当前连接
+        if (this.connectionId !== currentConnectionId) {
+          console.log('旧连接事件被忽略');
+          return;
+        }
+        
         clearTimeout(timeout);
-        console.log('✓ 成功连接到 ROS2 服务器');
-        this.stopAutoReconnect();
-        this.notifyListeners(true);
-        resolve();
+        console.log('WebSocket 已连接，正在验证 ROS 服务...');
+        
+        // 验证连接
+        const verified = await this.verifyConnection();
+        
+        if (this.connectionId !== currentConnectionId) {
+          console.log('验证完成但连接已切换');
+          return;
+        }
+        
+        if (verified) {
+          console.log('✓ 成功连接到 ROS2 服务器（已验证）');
+          this.lastConnectionVerified = true;
+          this.notifyListeners(true);
+          resolve();
+        } else {
+          console.error('✗ WebSocket 已连接但 ROS 服务验证失败');
+          this.closeExistingConnection();
+          reject(new Error('连接验证失败：ROS2 服务无响应'));
+        }
       });
 
       this.ros.on('error', (error: any) => {
+        if (this.connectionId !== currentConnectionId) return;
         clearTimeout(timeout);
         console.error('✗ ROS2 连接错误:', error);
         this.notifyListeners(false);
@@ -134,10 +244,14 @@ export class ROS2Connection {
       });
 
       this.ros.on('close', () => {
+        if (this.connectionId !== currentConnectionId) return;
         console.log('ROS2 连接已关闭');
+        this.lastConnectionVerified = false;
         this.notifyListeners(false);
-        // 断联时自动启动重连
-        this.startAutoReconnect();
+        // 只有在非主动断开时才自动重连
+        if (!this.isReconnecting && this.lastUrl) {
+          this.startAutoReconnect();
+        }
       });
     });
   }
@@ -148,7 +262,7 @@ export class ROS2Connection {
     
     console.log('启动自动重连...');
     this.reconnectTimer = setInterval(async () => {
-      if (this.isConnected()) {
+      if (this.isConnected() && this.lastConnectionVerified) {
         this.stopAutoReconnect();
         return;
       }
@@ -170,46 +284,88 @@ export class ROS2Connection {
     }
   }
 
-  // 静默重连（不reject）
+  // 重连（带验证）
   private reconnect(): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       if (!this.lastUrl) {
         reject(new Error('没有可用的连接URL'));
         return;
       }
 
-      // 清理旧的topic引用
-      this.pumpTopic = null;
-      this.chassisTopic = null;
-      this.armTopic = null;
+      this.isReconnecting = true;
+      
+      try {
+        // 先彻底关闭现有连接
+        this.closeExistingConnection();
+        
+        this.connectionId++;
+        const currentConnectionId = this.connectionId;
 
-      this.ros = new ROSLIB.Ros({ url: this.lastUrl });
+        this.ros = new ROSLIB.Ros({ url: this.lastUrl });
 
-      const timeout = setTimeout(() => {
-        if (this.ros) this.ros.close();
-        reject(new Error('重连超时'));
-      }, 5000);
+        const timeout = setTimeout(() => {
+          if (this.ros && this.connectionId === currentConnectionId) {
+            this.closeExistingConnection();
+          }
+          this.isReconnecting = false;
+          reject(new Error('重连超时'));
+        }, 8000);
 
-      this.ros.on('connection', () => {
-        clearTimeout(timeout);
-        this.stopAutoReconnect();
-        this.notifyListeners(true);
-        // 重连后重新发送establish请求
-        this.sendConnectionEstablishRequest(1);
-        // 重连后自动恢复之前的模式
-        this.restoreMode();
-        resolve();
-      });
+        this.ros.on('connection', async () => {
+          if (this.connectionId !== currentConnectionId) {
+            return;
+          }
+          
+          clearTimeout(timeout);
+          console.log('重连 WebSocket 成功，正在验证...');
+          
+          // 验证连接
+          const verified = await this.verifyConnection();
+          
+          if (this.connectionId !== currentConnectionId) {
+            this.isReconnecting = false;
+            return;
+          }
+          
+          if (verified) {
+            console.log('✓ 重连验证成功');
+            this.lastConnectionVerified = true;
+            this.stopAutoReconnect();
+            this.notifyListeners(true);
+            
+            // 重连后自动恢复之前的模式
+            this.restoreMode();
+            
+            this.isReconnecting = false;
+            resolve();
+          } else {
+            console.warn('重连 WebSocket 成功但验证失败');
+            this.closeExistingConnection();
+            this.isReconnecting = false;
+            reject(new Error('重连验证失败'));
+          }
+        });
 
-      this.ros.on('error', () => {
-        clearTimeout(timeout);
-        reject(new Error('重连失败'));
-      });
+        this.ros.on('error', () => {
+          if (this.connectionId !== currentConnectionId) return;
+          clearTimeout(timeout);
+          this.isReconnecting = false;
+          reject(new Error('重连失败'));
+        });
 
-      this.ros.on('close', () => {
-        this.notifyListeners(false);
-        this.startAutoReconnect();
-      });
+        this.ros.on('close', () => {
+          if (this.connectionId !== currentConnectionId) return;
+          this.lastConnectionVerified = false;
+          this.notifyListeners(false);
+          // 重连关闭后继续尝试
+          if (!this.isReconnecting) {
+            this.startAutoReconnect();
+          }
+        });
+      } catch (e) {
+        this.isReconnecting = false;
+        reject(e);
+      }
     });
   }
 
@@ -232,20 +388,20 @@ export class ROS2Connection {
     }
   }
 
+  // 完全断开连接（用户主动断开）
   disconnect() {
-    if (this.ros) {
-      this.ros.close();
-      this.ros = null;
-      this.pumpTopic = null;
-      this.chassisTopic = null;
-      this.armTopic = null;
-    }
+    console.log('用户主动断开连接');
+    this.stopAutoReconnect();
+    this.closeExistingConnection();
+    this.lastUrl = null; // 清除 URL 防止自动重连
   }
 
+  // 检查连接状态（WebSocket 连接 + 验证状态）
   isConnected(): boolean {
-    return this.ros !== null && this.ros.isConnected;
+    return this.ros !== null && this.ros.isConnected && this.lastConnectionVerified;
   }
 
+  // 仅发送 establish 请求（不用于验证）
   sendConnectionEstablishRequest(establish: number) {
     if (!this.ros) {
       console.error('未连接到 ROS2，无法发送请求');
