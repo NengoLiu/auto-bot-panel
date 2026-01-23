@@ -49,8 +49,8 @@ const Login = () => {
     const rosUrl = `ws://${ipAddress}:9090`;
     setIsConnecting(true);
     try {
+      // connect() 现在会自动发送 establish 请求并验证响应
       await ros2Connection.connect(rosUrl);
-      ros2Connection.sendConnectionEstablishRequest(1);
       
       // Save IP and connection info to localStorage for persistence
       localStorage.setItem("ros2_last_ip", ipAddress);
@@ -63,7 +63,7 @@ const Login = () => {
       
       toast({
         title: "连接成功",
-        description: "已连接到 ROS2 服务器"
+        description: "已连接到 ROS2 服务器（已验证）"
       });
       navigate("/control");
     } catch (error: any) {
