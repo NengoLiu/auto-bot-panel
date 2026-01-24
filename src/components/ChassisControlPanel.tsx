@@ -27,7 +27,7 @@ const saveChassisState = (state: { speed: number }) => {
 
 export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPanelProps) => {
   const savedState = loadChassisState();
-  const [speed, setSpeed] = useState(savedState.speed ?? 500);
+  const [speed, setSpeed] = useState(savedState.speed ?? 1000);
   const [activeDirection, setActiveDirection] = useState<string | null>(null);
   
   // 安全机制的引用
@@ -92,9 +92,10 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
     isPressingRef.current = true;
     setActiveDirection(direction);
     
-    const zSpeed = 103.35 * (speed / 1000);
+    // 旋转速度固定为500，不受调速影响
+    const zSpeed = 103.35 * (500 / 1000);
     sendControl(0, 0, zDirection * zSpeed);
-  }, [isEnabled, isConnected, speed, sendControl]);
+  }, [isEnabled, isConnected, sendControl]);
 
   // 全局事件监听 - 多重备用释放机制
   useEffect(() => {
@@ -154,7 +155,16 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
   }, [isEnabled, isConnected]);
 
   const adjustSpeed = (delta: number) => {
-    setSpeed((prev) => Math.min(Math.max(prev + delta, 100), 2000));
+    setSpeed((prev) => Math.min(Math.max(prev + delta, 0), 2000));
+  };
+
+  const handleSpeedInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value, 10);
+    if (!isNaN(value)) {
+      setSpeed(Math.min(Math.max(value, 0), 2000));
+    } else if (e.target.value === '') {
+      setSpeed(0);
+    }
   };
 
   // 键盘控制
@@ -379,20 +389,28 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => adjustSpeed(-50)}
+            onClick={() => adjustSpeed(-100)}
             disabled={isDisabled}
             className="h-8 w-8 rounded-full border border-border/50"
           >
             <Minus className="w-3 h-3" />
           </Button>
-          <div className="text-center">
-            <span className="text-xl font-bold text-primary">{speed}</span>
+          <div className="text-center flex items-center">
+            <input
+              type="number"
+              value={speed}
+              onChange={handleSpeedInput}
+              disabled={isDisabled}
+              min={0}
+              max={2000}
+              className="w-16 text-xl font-bold text-primary bg-transparent text-center border-none outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
             <span className="text-[8px] text-muted-foreground ml-1">mm/s</span>
           </div>
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => adjustSpeed(50)}
+            onClick={() => adjustSpeed(100)}
             disabled={isDisabled}
             className="h-8 w-8 rounded-full border border-border/50"
           >
