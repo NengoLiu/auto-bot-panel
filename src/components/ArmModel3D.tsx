@@ -13,7 +13,7 @@ const RobotArm = ({ yaw, roll, updown }: ArmModelProps) => {
   const groupRef = useRef<THREE.Group>(null);
 
   // Convert degrees to radians - yaw and roll rotate around Y axis
-  const yawRad = (yaw * Math.PI) / 180;
+  const yawRad = (-yaw * Math.PI) / 180;
   const rollRad = (roll * Math.PI) / 180;
   // updown is linear motion, map to vertical position (0-100 maps to 0-0.8)
   const updownOffset = (updown / 100) * 0.8;
