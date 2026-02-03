@@ -143,7 +143,19 @@ const Manual = () => {
 
           <TabsContent value="semiauto" className="space-y-6">
             <div className="flex justify-center">
-              <SemiAutoControlPanel isConnected={isConnected} />
+              <SemiAutoControlPanel 
+                isConnected={isConnected}
+                chassisEnabled={chassisEnabled}
+                armEnabled={armEnabled}
+                onChassisDisable={() => {
+                  ros2Connection.sendChassisEnableRequest(0);
+                  setChassisEnabled(false);
+                }}
+                onArmDisable={() => {
+                  ros2Connection.sendArmEnableRequest(0);
+                  setArmEnabled(false);
+                }}
+              />
             </div>
           </TabsContent>
         </Tabs>

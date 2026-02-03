@@ -198,7 +198,19 @@ const Control = () => {
 
           {/* 半自动模式 */}
           <TabsContent value="semiauto" className="flex-1 m-0 overflow-auto">
-            <SemiAutoControlPanel isConnected={isConnected} />
+            <SemiAutoControlPanel 
+              isConnected={isConnected} 
+              chassisEnabled={chassisEnabled}
+              armEnabled={armEnabled}
+              onChassisDisable={() => {
+                ros2Connection.sendChassisEnableRequest(0);
+                setChassisEnabled(false);
+              }}
+              onArmDisable={() => {
+                ros2Connection.sendArmEnableRequest(0);
+                setArmEnabled(false);
+              }}
+            />
           </TabsContent>
         </Tabs>
       </div>

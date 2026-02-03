@@ -32,9 +32,19 @@ const saveState = (state: SemiAutoState) => {
 
 interface SemiAutoControlPanelProps {
   isConnected: boolean;
+  chassisEnabled: boolean;
+  armEnabled: boolean;
+  onChassisDisable: () => void;
+  onArmDisable: () => void;
 }
 
-export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps) => {
+export const SemiAutoControlPanel = ({ 
+  isConnected, 
+  chassisEnabled, 
+  armEnabled, 
+  onChassisDisable, 
+  onArmDisable 
+}: SemiAutoControlPanelProps) => {
   const savedState = loadState();
   
   const [bladeRoller, setBladeRoller] = useState<"blade" | "roller">(savedState.bladeRoller || "blade");
@@ -98,6 +108,15 @@ export const SemiAutoControlPanel = ({ isConnected }: SemiAutoControlPanelProps)
   const handleStop = (stopCmd: number) => {
     if (!isConnected) return;
     ros2Connection.sendStopRequest(stopCmd);
+    
+    // 检测并发送底盘和机械臂失能指令
+    if (chassisEnabled) {
+      onChassisDisable();
+    }
+    if (armEnabled) {
+      onArmDisable();
+    }
+    
     toast.success("停止指令已发送");
     // 紧急停止后解锁参数，允许重新配置
     setIsConfigured(false);
