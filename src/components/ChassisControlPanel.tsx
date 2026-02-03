@@ -19,7 +19,7 @@ const loadChassisState = () => {
   }
 };
 
-const saveChassisState = (state: { speed: number }) => {
+const saveChassisState = (state: { speed: number; zMode: number }) => {
   try {
     sessionStorage.setItem(CHASSIS_STORAGE_KEY, JSON.stringify(state));
   } catch {}
@@ -28,6 +28,7 @@ const saveChassisState = (state: { speed: number }) => {
 export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPanelProps) => {
   const savedState = loadChassisState();
   const [speed, setSpeed] = useState(savedState.speed ?? 1000);
+  const [zMode, setZMode] = useState<number>(savedState.zMode ?? 0); // 0: 慢速(0.5), 1: 快速(1)
   const [activeDirection, setActiveDirection] = useState<string | null>(null);
   
   // 安全机制的引用
@@ -37,8 +38,8 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
 
   // 持久化速度设置
   useEffect(() => {
-    saveChassisState({ speed });
-  }, [speed]);
+    saveChassisState({ speed, zMode });
+  }, [speed, zMode]);
 
   // 发送控制指令
   const sendControl = useCallback((x: number, y: number, z: number) => {
@@ -92,10 +93,11 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
     isPressingRef.current = true;
     setActiveDirection(direction);
     
-    // 旋转速度固定为500，不受调速影响
-    const zSpeed = 103.35 * (500 / 1000);
+    // 旋转速度根据 zMode 切换: 0=慢速(500), 1=快速(1000)
+    const rotationSpeed = zMode === 0 ? 500 : 1000;
+    const zSpeed = 103.35 * (rotationSpeed / 1000);
     sendControl(0, 0, zDirection * zSpeed);
-  }, [isEnabled, isConnected, sendControl]);
+  }, [isEnabled, isConnected, sendControl, zMode]);
 
   // 全局事件监听 - 多重备用释放机制
   useEffect(() => {
@@ -364,6 +366,20 @@ export const ChassisControlPanel = ({ isEnabled, isConnected }: ChassisControlPa
           >
             <RotateCcw className="w-3 h-3 pointer-events-none" />
             <span className="text-[8px] pointer-events-none">CCW</span>
+          </button>
+
+          {/* Z Mode Toggle */}
+          <button
+            onClick={() => setZMode(prev => prev === 0 ? 1 : 0)}
+            disabled={isDisabled}
+            className={`px-2 py-1 rounded border text-[9px] transition-all select-none ${
+              zMode === 1
+                ? 'bg-accent/30 border-accent text-accent'
+                : 'bg-secondary/50 border-border/50 text-muted-foreground'
+            } disabled:opacity-30`}
+          >
+            <span className="font-semibold">{zMode === 0 ? '慢' : '快'}</span>
+            <span className="text-[7px] opacity-70 ml-0.5">{zMode === 0 ? 'SLOW' : 'FAST'}</span>
           </button>
 
           {/* CW */}
