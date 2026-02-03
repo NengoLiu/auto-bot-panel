@@ -42,7 +42,9 @@ export interface ArmControlMessage {
 
 export interface SemiModeRequest {
   blade_roller: number; // 0: 刮涂, 1: 辊涂
+  paint_layer: number; // uint8 涂料层
   direction: number; // 0: 向左, 1: 向右
+  back_length: number; // float32 后退距离 0-100m
   width: number; // float32 0-2600mm
   length: number; // float32 0-20000mm
   thickness: number; // float32 0-20mm
@@ -555,7 +557,15 @@ export class ROS2Connection {
   }
 
   // 半自动模式
-  sendSemiModeRequest(blade_roller: number, direction: number, width: number, length: number, thickness: number) {
+  sendSemiModeRequest(
+    blade_roller: number, 
+    paint_layer: number,
+    direction: number, 
+    back_length: number,
+    width: number, 
+    length: number, 
+    thickness: number
+  ) {
     if (!this.ros) {
       console.error('未连接到 ROS2，无法发送请求');
       return;
@@ -569,12 +579,14 @@ export class ROS2Connection {
 
     const request = new ROSLIB.ServiceRequest({
       blade_roller,
+      paint_layer,
       direction,
+      back_length,
       width,
       length,
       thickness
     });
-    const logId = packetLogger.logSend('service', '/semi_mode', { blade_roller, direction, width, length, thickness });
+    const logId = packetLogger.logSend('service', '/semi_mode', { blade_roller, paint_layer, direction, back_length, width, length, thickness });
     
     service.callService(request,
       (result: SemiModeResponse) => {

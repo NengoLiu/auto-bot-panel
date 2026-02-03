@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { Play, Info, Zap, Layers, Minus, Plus, ArrowLeft, ArrowRight } from "lucide-react";
 import { ros2Connection } from "@/lib/ros2Connection";
 import { toast } from "sonner";
@@ -8,7 +9,9 @@ const STORAGE_KEY = "semi_auto_state";
 
 interface SemiAutoState {
   bladeRoller: "blade" | "roller";
+  paintLayer: number;
   direction: "left" | "right";
+  backLength: number;
   length: number;
   width: number;
   thickness: number;
@@ -48,7 +51,9 @@ export const SemiAutoControlPanel = ({
   const savedState = loadState();
   
   const [bladeRoller, setBladeRoller] = useState<"blade" | "roller">(savedState.bladeRoller || "blade");
+  const [paintLayer, setPaintLayer] = useState(savedState.paintLayer ?? 0);
   const [direction, setDirection] = useState<"left" | "right">(savedState.direction || "left");
+  const [backLength, setBackLength] = useState(savedState.backLength ?? 0);
   const [length, setLength] = useState(savedState.length ?? 10);
   const [width, setWidth] = useState(savedState.width ?? 1.6);
   const [thickness, setThickness] = useState(savedState.thickness ?? 5);
@@ -58,13 +63,15 @@ export const SemiAutoControlPanel = ({
   useEffect(() => {
     saveState({
       bladeRoller,
+      paintLayer,
       direction,
+      backLength,
       length,
       width,
       thickness,
       isConfigured,
     });
-  }, [bladeRoller, direction, length, width, thickness, isConfigured]);
+  }, [bladeRoller, paintLayer, direction, backLength, length, width, thickness, isConfigured]);
 
   const adjustValue = (
     setter: React.Dispatch<React.SetStateAction<number>>,
@@ -79,6 +86,15 @@ export const SemiAutoControlPanel = ({
     });
   };
 
+  const handleBackLengthInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value);
+    if (!isNaN(value)) {
+      setBackLength(Math.min(Math.max(Math.round(value * 100) / 100, 0), 100));
+    } else if (e.target.value === '') {
+      setBackLength(0);
+    }
+  };
+
   const handleSubmit = () => {
     if (!isConnected) {
       toast.error("请先建立ROS2连接");
@@ -87,7 +103,9 @@ export const SemiAutoControlPanel = ({
 
     const config = {
       blade_roller: bladeRoller === "blade" ? 0 : 1,
+      paint_layer: paintLayer,
       direction: direction === "left" ? 0 : 1,
+      back_length: backLength,
       width,
       length,
       thickness,
@@ -95,7 +113,9 @@ export const SemiAutoControlPanel = ({
 
     ros2Connection.sendSemiModeRequest(
       config.blade_roller,
+      config.paint_layer,
       config.direction,
+      config.back_length,
       config.width,
       config.length,
       config.thickness
@@ -175,11 +195,11 @@ export const SemiAutoControlPanel = ({
           <span className="text-[10px] font-semibold text-accent">施工方式</span>
           <span className="text-[8px] text-muted-foreground">METHOD</span>
         </div>
-        <div className="flex gap-1 mb-2">
+        <div className="flex gap-1 mb-1">
           <button
             onClick={() => setBladeRoller("blade")}
             disabled={isConfigured}
-            className={`flex-1 py-1.5 px-2 rounded border text-xs transition-all ${
+            className={`flex-1 py-1 px-2 rounded border text-xs transition-all ${
               bladeRoller === "blade"
                 ? "bg-destructive/20 border-destructive text-destructive"
                 : "bg-secondary/30 border-border/50 text-muted-foreground"
@@ -191,7 +211,7 @@ export const SemiAutoControlPanel = ({
           <button
             onClick={() => setBladeRoller("roller")}
             disabled={isConfigured}
-            className={`flex-1 py-1.5 px-2 rounded border text-xs transition-all ${
+            className={`flex-1 py-1 px-2 rounded border text-xs transition-all ${
               bladeRoller === "roller"
                 ? "bg-destructive/20 border-destructive text-destructive"
                 : "bg-secondary/30 border-border/50 text-muted-foreground"
@@ -202,16 +222,38 @@ export const SemiAutoControlPanel = ({
           </button>
         </div>
 
+        {/* 涂料层选择 */}
+        <div className="flex items-center gap-1 mb-1">
+          <span className="text-[10px] font-semibold text-muted-foreground">涂料层</span>
+          <span className="text-[8px] text-muted-foreground">LAYER</span>
+        </div>
+        <div className="flex gap-1 mb-1">
+          {[0, 1, 2].map((layer) => (
+            <button
+              key={layer}
+              onClick={() => setPaintLayer(layer)}
+              disabled={isConfigured}
+              className={`flex-1 py-1 px-1 rounded border text-xs transition-all ${
+                paintLayer === layer
+                  ? "bg-accent/20 border-accent text-accent"
+                  : "bg-secondary/30 border-border/50 text-muted-foreground"
+              } disabled:opacity-50`}
+            >
+              <span className="font-semibold">{layer}</span>
+            </button>
+          ))}
+        </div>
+
         {/* 方向选择 */}
         <div className="flex items-center gap-1 mb-1">
           <span className="text-[10px] font-semibold text-muted-foreground">施工方向</span>
           <span className="text-[8px] text-muted-foreground">DIR</span>
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1 mb-1">
           <button
             onClick={() => setDirection("left")}
             disabled={isConfigured}
-            className={`flex-1 py-1.5 px-2 rounded border text-xs transition-all flex items-center justify-center gap-1 ${
+            className={`flex-1 py-1 px-2 rounded border text-xs transition-all flex items-center justify-center gap-1 ${
               direction === "left"
                 ? "bg-primary/20 border-primary text-primary"
                 : "bg-secondary/30 border-border/50 text-muted-foreground"
@@ -223,7 +265,7 @@ export const SemiAutoControlPanel = ({
           <button
             onClick={() => setDirection("right")}
             disabled={isConfigured}
-            className={`flex-1 py-1.5 px-2 rounded border text-xs transition-all flex items-center justify-center gap-1 ${
+            className={`flex-1 py-1 px-2 rounded border text-xs transition-all flex items-center justify-center gap-1 ${
               direction === "right"
                 ? "bg-primary/20 border-primary text-primary"
                 : "bg-secondary/30 border-border/50 text-muted-foreground"
@@ -232,6 +274,36 @@ export const SemiAutoControlPanel = ({
             <span className="font-semibold">右</span>
             <ArrowRight className="w-3 h-3" />
           </button>
+        </div>
+
+        {/* 后退距离 */}
+        <div className="flex items-center gap-1 mb-1">
+          <span className="text-[10px] font-semibold text-muted-foreground">后退距离</span>
+          <span className="text-[8px] text-muted-foreground">BACK</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Slider
+            value={[backLength]}
+            onValueChange={([val]) => setBackLength(Math.round(val * 100) / 100)}
+            min={0}
+            max={100}
+            step={0.01}
+            disabled={isConfigured}
+            className="flex-1"
+          />
+          <div className="flex items-center">
+            <input
+              type="number"
+              value={backLength}
+              onChange={handleBackLengthInput}
+              disabled={isConfigured}
+              min={0}
+              max={100}
+              step={0.01}
+              className="w-12 text-sm font-bold text-primary bg-transparent text-center border border-border/50 rounded px-1 py-0.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
+            />
+            <span className="text-[8px] text-muted-foreground ml-1">M</span>
+          </div>
         </div>
       </div>
 
