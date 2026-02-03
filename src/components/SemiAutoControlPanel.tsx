@@ -228,18 +228,23 @@ export const SemiAutoControlPanel = ({
           <span className="text-[8px] text-muted-foreground">LAYER</span>
         </div>
         <div className="flex gap-1 mb-1">
-          {[0, 1, 2].map((layer) => (
+          {[
+            { value: 0, label: "底漆", en: "BASE" },
+            { value: 2, label: "中涂", en: "MID" },
+            { value: 3, label: "面漆", en: "TOP" },
+          ].map((item) => (
             <button
-              key={layer}
-              onClick={() => setPaintLayer(layer)}
+              key={item.value}
+              onClick={() => setPaintLayer(item.value)}
               disabled={isConfigured}
               className={`flex-1 py-1 px-1 rounded border text-xs transition-all ${
-                paintLayer === layer
+                paintLayer === item.value
                   ? "bg-accent/20 border-accent text-accent"
                   : "bg-secondary/30 border-border/50 text-muted-foreground"
               } disabled:opacity-50`}
             >
-              <span className="font-semibold">{layer}</span>
+              <span className="font-semibold">{item.label}</span>
+              <span className="text-[7px] opacity-70 block">{item.en}</span>
             </button>
           ))}
         </div>

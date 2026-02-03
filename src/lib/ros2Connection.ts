@@ -42,7 +42,7 @@ export interface ArmControlMessage {
 
 export interface SemiModeRequest {
   blade_roller: number; // 0: 刮涂, 1: 辊涂
-  paint_layer: number; // uint8 涂料层
+  paint_layer: number; // uint8 0: 底漆, 2: 中涂, 3: 面漆
   direction: number; // 0: 向左, 1: 向右
   back_length: number; // float32 后退距离 0-100m
   width: number; // float32 0-2600mm
